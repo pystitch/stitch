@@ -13,7 +13,6 @@ to pandoc's JSON AST
 """
 import json
 from queue import Empty
-from textwrap import dedent
 from collections import namedtuple
 from jupyter_client.manager import start_new_kernel
 from pandocfilters import Para, Str, RawBlock
@@ -49,6 +48,8 @@ def stitch(source: str, kernel_name='python') -> str:
                          if to_execute(block))
     kernels = {name: KernelPair(*start_new_kernel(kernel_name=name))
                for name in needed_kernels}
+    for name, kernel in kernels.items():
+        initialize_graphics(name, kernel)
 
     new_blocks = []
     for block in blocks:
@@ -104,12 +105,15 @@ def extract_kernel_name(block):
 
 def wrap(output):
     out = output[-1]  # ?
-    order = ['text/plain', 'image/svg+xml']
+    order = ['text/plain', 'image/svg+xml', 'image/png']
     key = sorted(out, key=lambda x: order.index(x))[-1]
     if key == 'text/plain':
         return Para([Str(output[-1][key])])
     elif key == 'image/svg+xml':
         return RawBlock('html', output[-1][key])
+    elif key == 'image/png':
+        data = '<img src="data:image/png;base64,{}">'.format(output[-1][key])
+        return RawBlock('html', data)
 
     return Para([Str(output[-1][key])])
 
@@ -208,17 +212,23 @@ def output_from_msg(msg):
     return msg['content']['data']
 
 
-def initialize_graphics(kp):
-
-    valid_formats = ["png", "jpg", "jpeg", "pdf", "svg"]
-    code = """\
-    %matplotlib inline
-    from IPython.display import set_matplotlib_formats
-    """
-    fmt_code = '\n'.join("set_matplotlib_formats('{}')".format(fmt)
-                         for fmt in valid_formats)
-    code = dedent(code) + fmt_code
-    kp.kc.execute(code, store_history=False)
+def initialize_graphics(name, kp):
+    # TODO: set_matplotlib_formats takes *args
+    # TODO: do as needed? Push on user?
+    # valid_formats = ["png", "jpg", "jpeg", "pdf", "svg"]
+    if name == 'python':
+        code = """\
+        %matplotlib inline
+        from IPython.display import set_matplotlib_formats
+        """
+        kp.kc.execute(code + 'set_matplotlib_formats("png")',
+                      store_history=False)
+        # fmt_code = '\n'.join("set_matplotlib_formats('{}')".format(fmt)
+        #                      for fmt in valid_formats)
+        # code = dedent(code) + fmt_code
+        # kp.kc.execute(code, store_history=False)
+    else:
+        raise ValueError(name)
 
 
 
