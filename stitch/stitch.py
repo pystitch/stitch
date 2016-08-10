@@ -13,9 +13,10 @@ to pandoc's JSON AST
 """
 import json
 from queue import Empty
+from textwrap import dedent
 from collections import namedtuple
 from jupyter_client.manager import start_new_kernel
-from pandocfilters import Para, Str
+from pandocfilters import Para, Str, RawBlock
 import pypandoc
 
 # see https://github.com/jupyter/nbconvert/blob/master/nbconvert/preprocessors/execute.py
@@ -25,16 +26,22 @@ CODEBLOCK = 'CodeBlock'
 KernelPair = namedtuple("KernelPair", "km kc")
 
 
-def convert(source, to, extra_args=(), outputfile=None, filters=None):
+def convert(source: str, to: str, extra_args=(), outputfile=None,
+            filters=None) -> None:
+    """
+    Convert a source document to an output file.
+    """
     newdoc = stitch(source)
-    return pypandoc.convert_text(newdoc, to, format='json', outputfile=outputfile)
+    return pypandoc.convert_text(newdoc, to, format='json',
+                                 outputfile=outputfile)
 
 
-def stitch(source: str, kernel_name='python'):
+def stitch(source: str, kernel_name='python') -> str:
 
     meta, blocks = tokenize(source)
-    needed_kernels = extract_kernel_names(blocks)
-    kernels = {name: KernelPair(*start_new_kernel(kernel_name=kernel_name))
+    needed_kernels = set(extract_kernel_name(block) for block in blocks
+                         if to_execute(block))
+    kernels = {name: KernelPair(*start_new_kernel(kernel_name=name))
                for name in needed_kernels}
 
     new_blocks = []
@@ -49,13 +56,20 @@ def stitch(source: str, kernel_name='python'):
     return doc
 
 
-def extract_kernel_names(blocks):
-    return set(x['c'][0][1][0] for x in blocks if to_execute(x))
+def extract_kernel_name(block):
+    return block['c'][0][1][0].strip('{}')
 
 
 def wrap(output):
-    # TODO: All kinds of output, not just text.
-    return Para([Str(output[0]['text/plain'])])
+    out = output[-1]  # ?
+    order = ['text/plain', 'image/svg+xml']
+    key = sorted(out, key=lambda x: order.index(x))[-1]
+    if key == 'text/plain':
+        return Para([Str(output[-1][key])])
+    elif key == 'image/svg+xml':
+        return RawBlock('html', output[-1][key])
+
+    return Para([Str(output[-1][key])])
 
 
 def tokenize(source: str) -> dict:
@@ -66,8 +80,9 @@ def to_execute(x):
     return x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2]
 
 
-def execute_block(block, kc, timeout=None):
+def execute_block(block, kernels, timeout=None):
     # see nbconvert.run_cell
+    kc = kernels[extract_kernel_name(block)]
     code = block['c'][1]
     outs = run_code(code, kc, timeout=timeout)
     return outs
@@ -76,12 +91,11 @@ def execute_block(block, kc, timeout=None):
 
 def run_code(code, kp, timeout=None):
     msg_id = kp.kc.execute(code)
-    print(msg_id)
     while True:
         try:
             msg = kp.kc.shell_channel.get_msg(timeout=timeout)
         except Empty:
-            print("emtpy")
+            pass
             # self.log.error(
             #     "Timeout waiting for execute reply (%is)." % self.timeout)
             # if self.interrupt_on_timeout:
@@ -111,10 +125,9 @@ def run_code(code, kp, timeout=None):
             # So long as the kernel sends a status:idle message when it
             # finishes, we won't actually have to wait this long, anyway.
             msg = kp.kc.iopub_channel.get_msg(timeout=4)
-            print(msg, end='n' + '*' * 80 + '\n\n')
         except Empty:
+            pass
             # self.log.warn("Timeout waiting for IOPub output")
-            print("Timeout waiting for IOPub output")
             # if self.raise_on_iopub_timeout:
             #    # raise RuntimeError("Timeout waiting for IOPub output")
         if msg['parent_header'].get('msg_id') != msg_id:
@@ -141,8 +154,8 @@ def run_code(code, kp, timeout=None):
         try:
             out = output_from_msg(msg)
         except ValueError:
+            pass
             # self.log.error("unhandled iopub msg: " + msg_type)
-            print("bad")
         else:
             outs.append(out)
 
@@ -151,5 +164,19 @@ def run_code(code, kp, timeout=None):
 
 def output_from_msg(msg):
     return msg['content']['data']
+
+
+def initialize_graphics(kp):
+
+    valid_formats = ["png", "jpg", "jpeg", "pdf", "svg"]
+    code = """\
+    %matplotlib inline
+    from IPython.display import set_matplotlib_formats
+    """
+    fmt_code = '\n'.join("set_matplotlib_formats('{}')".format(fmt)
+                         for fmt in valid_formats)
+    code = dedent(code) + fmt_code
+    kp.kc.execute(code, store_history=False)
+
 
 

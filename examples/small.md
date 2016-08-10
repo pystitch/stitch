@@ -30,5 +30,13 @@ def f(x):
 f(2)
 ```
 
+## Plotting
+
+```{.python}
+%matplotlib inline
+import matplotlib.pyplot as plt
+plt.plot(range(4), range(4))
+```
+
 Fin.
 
