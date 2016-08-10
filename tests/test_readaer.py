@@ -1,39 +1,50 @@
+import os
+import json
 import pytest
+import pypandoc
 
-import stitch.reader as R
-
-
-def test_regex_matches():
-    s = '```{python}\ndef f(x):\n    return x\n```'
-    assert R.BlockGrammarWithOpts.fences.match(s)
+import stitch.stitch as R
 
 
-@pytest.mark.parametrize('options,expected_options', [
-    ('python', ''),
-    ('{python}', ''),
-    ('python echo=False execute=True', 'echo=False execute=True'),
+HERE = os.path.dirname(__file__)
+
+
+@pytest.fixture
+def document():
+    with open(os.path.join(HERE, 'data', 'test1.md')) as f:
+        doc = f.read()
+    return doc
+
+
+@pytest.fixture
+def as_json(document):
+    return json.loads(pypandoc.convert_text(document, 'json', format='markdown'))
+
+
+@pytest.fixture(params=['python', 'R'], ids=['python', 'R'])
+def code_block(request):
+    if request.param == 'python':
+        code = 'def f(x):\n    return x * 2\n\nf(2)'
+    elif request.param == 'R':
+        code = 'f <- function(x){\n  return(x * 2)\n}\n\nf(2)'
+    block = {'t': 'CodeBlock',
+             'c': [['', ['{}'.format(request.param)], []],
+                   code]}
+    return block
+
+@pytest.mark.parametrize('block, expected', [
+    ({'t': 'CodeBlock',
+      'c': [['', ['{python}'], []],
+            'def f(x):\n    return x * 2\n\nf(2)']}, True),
+    ({'c': [{'c': 'With', 't': 'Str'},
+     {'c': [], 't': 'Space'},
+     {'c': 'options', 't': 'Str'}], 't': 'Para'}, False),
 ])
-def test_lexer(options, expected_options):
-    doc = '```{}\ndef f(x):\n    return x\n```'.format(options)
-    tok = R.tokenize(doc)
-    expected = [{
-        'type': 'code',
-        'lang': 'python',
-        'options': expected_options,
-        'text': 'def f(x):\n    return x',
-    }]
-    assert tok == expected
+def test_to_execute(block, expected):
+    result = R.to_execute(block)
+    assert result is expected
 
-
-def test_lexer_opts():
-    doc = '```{python echo=False}\ndef f(x):\n    return x\n```'
-    tok = R.tokenize(doc)
-    assert tok[0]['type'] == 'code'
-
-
-@pytest.mark.parametrize('endmarker', ['---\n', '...\n'])
-def test_parse_header(endmarker):
-    doc = '---\ntitle: test title\nauthor: test author\n' + endmarker
-    result = R.parse_header(doc)
-    assert result == {'title': 'test title', 'author': 'test author'}
+def test_extract_kernel_names(code_block):
+    result = R.extract_kernel_names([code_block])
+    assert len(result) == 1
 

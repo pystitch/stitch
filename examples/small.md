@@ -8,18 +8,26 @@ author: test author
 ```{python}
 def f(x):
     return x * 2
+
+f(2)
 ```
 
 With options
 
-```{.python .numberLines echo="False"}
+```{.python echo=False eval=True}
 def f(x):
     return x ** 2
+
+f(2)
 ```
 
-```{python echo=False}
+Don't evaluate.
+
+```{.python eval=False}
 def f(x):
     return x ** 2
+
+f(2)
 ```
 
 Fin.
