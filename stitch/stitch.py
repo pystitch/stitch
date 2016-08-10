@@ -26,6 +26,10 @@ CODEBLOCK = 'CodeBlock'
 KernelPair = namedtuple("KernelPair", "km kc")
 
 
+# --------
+# User API
+# --------
+
 def convert(source: str, to: str, extra_args=(), outputfile=None,
             filters=None) -> None:
     """
@@ -37,7 +41,9 @@ def convert(source: str, to: str, extra_args=(), outputfile=None,
 
 
 def stitch(source: str, kernel_name='python') -> str:
-
+    """
+    Execute code blocks, stitching the outputs back into a file.
+    """
     meta, blocks = tokenize(source)
     needed_kernels = set(extract_kernel_name(block) for block in blocks
                          if to_execute(block))
@@ -54,6 +60,42 @@ def stitch(source: str, kernel_name='python') -> str:
 
     doc = json.dumps([meta, new_blocks])
     return doc
+
+
+def parse_kernel_arguments(block):
+    """
+    Parse the kernel arguments of a code block,
+    returning a tuple of (args, kwargs)
+
+    Parameters
+    ----------
+    block
+
+    Returns
+    -------
+    tuple
+
+    Notes
+    -----
+    The allowed positional arguments are
+
+    - kernel_name
+    - chunk_name
+
+    All other arguments must be like ``keyword=value``.
+    """
+    options = block['c'][0][1]
+    kernel_name = chunk_name = None
+    if len(options) == 0:
+        pass
+    elif len(options) == 1:
+        kernel_name = options[0]
+    elif len(options) == 2:
+        kernel_name, chunk_name = options
+    else:
+        raise TypeError("Bad options %s" % options)
+    kwargs = dict(block['c'][0][2])
+    return (kernel_name, chunk_name), kwargs
 
 
 def extract_kernel_name(block):

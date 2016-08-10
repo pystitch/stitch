@@ -44,7 +44,21 @@ def test_to_execute(block, expected):
     result = R.to_execute(block)
     assert result is expected
 
-def test_extract_kernel_names(code_block):
-    result = R.extract_kernel_names([code_block])
-    assert len(result) == 1
+def test_extract_kernel_name(code_block):
+    result = R.extract_kernel_name(code_block)
+    assert result in ('R', 'python')
 
+
+@pytest.mark.parametrize('code_block, expected', [
+    ({'c': [['', ['python'], []], '3'], 't': 'CodeBlock'},
+     (('python', None), {})),
+    ({'c': [['', ['python', 'name'], []], '3'], 't': 'CodeBlock'},
+     (('python', 'name'), {})),
+    ({'c': [['', ['r', 'n'], [['foo', 'bar']]], '3'], 't': 'CodeBlock'},
+     (('r', 'n'), {'foo': 'bar'})),
+    ({'c': [['', [], [['foo', 'bar']]], '4'], 't': 'CodeBlock'},
+     ((None, None), {'foo': 'bar'})),
+])
+def test_parse_kernel_arguments(code_block, expected):
+    result = R.parse_kernel_arguments(code_block)
+    assert result == expected
