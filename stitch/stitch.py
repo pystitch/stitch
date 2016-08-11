@@ -91,10 +91,29 @@ def stitch(source: str, kernel_name='python') -> str:
     doc = json.dumps([meta, new_blocks])
     return doc
 
+# -----------
+# Input Tests
+# -----------
 
 def is_code_block(block):
     is_code = block['t'] == CODEBLOCK
     return is_code  # TODO: echo
+
+def to_execute(x):
+    return (x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2] and
+            extract_kernel_name(x) is not None)
+
+
+# ----------------
+# Input Processing
+# ----------------
+
+def tokenize(source: str) -> dict:
+    return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
+
+
+def format_input_code(code):
+    return '## ' + code.replace('\n', '\n## ')
 
 
 def wrap_input_code(block):
@@ -103,9 +122,6 @@ def wrap_input_code(block):
     code = block['c'][1]
     new['c'][1] = format_input_code(code)
     return new
-
-def format_input_code(code):
-    return '## ' + code.replace('\n', '\n## ')
 
 
 def parse_kernel_arguments(block):
@@ -155,6 +171,11 @@ def extract_kernel_name(block):
         return None
 
 
+# -----------------
+# Output Processing
+# -----------------
+
+
 def wrap_output(output):
     out = output[-1]  # TODO: Multiple outputs
     if not isinstance(out, MutableMapping):
@@ -176,14 +197,9 @@ def wrap_output(output):
     return Para([Str(output[-1][key])])
 
 
-def tokenize(source: str) -> dict:
-    return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
-
-
-def to_execute(x):
-    return (x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2] and
-            extract_kernel_name(x) is not None)
-
+# --------------
+# Code Execution
+# --------------
 
 def execute_block(block, kernels, timeout=None):
     # see nbconvert.run_cell
