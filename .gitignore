@@ -3,6 +3,7 @@
 build/
 dist/
 __pycache__/
+htmlcov/
 
 .coverage
 

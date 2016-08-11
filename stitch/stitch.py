@@ -70,7 +70,7 @@ def convert(source: str, to: str, extra_args=(), output_file=None,
         print(result)
 
 
-def stitch(source: str, kernel_name='python') -> str:
+def stitch(source: str) -> str:
     """
     Execute code blocks, stitching the outputs back into a file.
     """
@@ -202,7 +202,7 @@ def wrap_output(output):
         output = [out]
 
     # TODO: this is getting messy
-    order = ['text/plain', 'text/html', 'image/svg+xml', 'image/png']
+    order = ['text/plain', 'text/latex', 'text/html', 'image/svg+xml', 'image/png']
     key = sorted(out, key=lambda x: order.index(x))[-1]
     if key == 'text/plain':
         # ident, classes, kvs

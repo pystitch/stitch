@@ -73,3 +73,39 @@ def test_wrap_output(output, expected):
     result = R.wrap_output(output)
     assert result == expected
 
+
+class TestTesters:
+
+    @pytest.mark.parametrize('block, expected', [
+        ({'t': 'CodeBlock',
+          'c': [['', ['{python}'], []],
+                'def f(x):\n    return x * 2\n\nf(2)']}, True),
+        ({'c': [{'c': 'With', 't': 'Str'},
+                {'c': [], 't': 'Space'},
+                {'c': 'options', 't': 'Str'}], 't': 'Para'}, False),
+    ])
+    def test_is_code_block(self, block, expected):
+        result = R.is_code_block(block)
+        assert result == expected
+
+    @pytest.mark.parametrize('output, attrs, expected', [
+        ([], {}, False),
+        ([None], {}, False),
+        ([{'text/plain': '4'}], {}, True),
+        ([{'text/plain': '4'}], {'results': 'hide'}, False),
+    ])
+    def test_is_stitchable(self, output, attrs, expected):
+        result = R.is_stitchable(output, attrs)
+        assert result == expected
+
+
+class TestKernelArgs:
+
+    @pytest.mark.parametrize('block, expected', [
+        ({'t': 'CodeBlock', 'c': [['', ['python'], []], 'foo']}, 'python'),
+        ({'t': 'CodeBlock', 'c': [['', ['ir'], ['foo']], 'foo']}, 'ir'),
+        ({'t': 'CodeBlock', 'c': [['', ['ir'], [['foo', 'bar']]], 'foo']}, 'ir'),
+    ])
+    def test_extract_kernel_name(self, block, expected):
+        result = R.extract_kernel_name(block)
+        assert result == expected

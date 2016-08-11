@@ -44,7 +44,7 @@ sns.pairplot(df, hue="species")
 Why limit yourself to python?
 
 ```{.ir}
-summary(cars)
+head(cars)
 ```
 
 ```{.ir}
