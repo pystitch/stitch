@@ -328,6 +328,3 @@ def initialize_graphics(name, kp):
     else:
         # raise ValueError(name)
         pass
-
-
-
