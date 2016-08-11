@@ -11,6 +11,7 @@ to pandoc's JSON AST
 7. Use pandoc / pypandoc to convert the AST to output.
 
 """
+import copy
 import json
 from queue import Empty
 from collections import namedtuple
@@ -53,14 +54,33 @@ def stitch(source: str, kernel_name='python') -> str:
 
     new_blocks = []
     for block in blocks:
-        new_blocks.append(block)
+        if is_code_block(block):
+            new_blocks.append(wrap_input_code(block))
+        else:
+            new_blocks.append(block)
         if to_execute(block):
             result = execute_block(block, kernels)
-            result = wrap(result)
+            result = wrap_output(result)
             new_blocks.append(result)
 
     doc = json.dumps([meta, new_blocks])
     return doc
+
+
+def is_code_block(block):
+    is_code = block['t'] == CODEBLOCK
+    return is_code  # TODO: echo
+
+
+def wrap_input_code(block):
+    # TODO: IPython In / Out formatting
+    new = copy.deepcopy(block)
+    code = block['c'][1]
+    new['c'][1] = format_input_code(code)
+    return new
+
+def format_input_code(code):
+    return '## ' + code.replace('\n', '\n## ')
 
 
 def parse_kernel_arguments(block):
@@ -103,7 +123,7 @@ def extract_kernel_name(block):
     return block['c'][0][1][0].strip('{}')
 
 
-def wrap(output):
+def wrap_output(output):
     out = output[-1]  # ?
     order = ['text/plain', 'image/svg+xml', 'image/png']
     key = sorted(out, key=lambda x: order.index(x))[-1]
