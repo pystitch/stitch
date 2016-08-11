@@ -58,8 +58,10 @@ def convert(source: str, to: str, extra_args=(), output_file=None,
     Convert a source document to an output file.
     """
     newdoc = stitch(source)
-    return pypandoc.convert_text(newdoc, to, format='json',
-                                 outputfile=output_file)
+    result = pypandoc.convert_text(newdoc, to, format='json',
+                                   outputfile=output_file)
+    if output_file is None:
+        print(result)
 
 
 def stitch(source: str, kernel_name='python') -> str:
@@ -166,7 +168,7 @@ def parse_kernel_arguments(block):
 def extract_kernel_name(block):
     options = block['c'][0][1]
     if len(options) >= 1:
-        return options[0]
+        return options[0].strip('{}').strip()
     else:
         return None
 

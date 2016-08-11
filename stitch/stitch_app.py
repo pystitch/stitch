@@ -29,6 +29,7 @@ class StitchApp(JupyterApp):
 
     # alias for to
     input_file = Unicode(help="Input file").tag(config=True)
+    output_file = Unicode(help="Input file", allow_none=True).tag(config=True)
 
     output_format = CaselessStrEnum(
         OUTPUT_FORMATS,
@@ -48,13 +49,17 @@ class StitchApp(JupyterApp):
 
     def initialize_input(self):
         self.input_file = self.extra_args[0]
+        try:
+            self.output_file = self.extra_args[1]
+        except IndexError:
+            self.output_file = None
 
     def start(self):
         super().start()
         self.convert()
 
     def convert(self):
-        convert_file(self.input_file, 'html', output_file='test.html')
+        convert_file(self.input_file, 'html', output_file=self.output_file)
 
     def post_process(self, writer):
         pass
