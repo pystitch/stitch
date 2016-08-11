@@ -6,7 +6,7 @@ from traitlets import (
 )
 from traitlets.config import catch_config_error
 
-from .stitch import OUTPUT_FORMATS
+from .stitch import OUTPUT_FORMATS, convert_file
 
 nbconvert_aliases = {}
 nbconvert_aliases.update(base_aliases)
@@ -15,6 +15,7 @@ nbconvert_aliases.update({
     'timeout': 'Knitpy.timeout',
     'output-debug': 'TemporaryOutputDocument.output_debug',
 })
+
 
 class StitchApp(JupyterApp):
     "Application to convert markdown documents"
@@ -27,6 +28,8 @@ class StitchApp(JupyterApp):
     aliases = base_aliases
 
     # alias for to
+    input_file = Unicode(help="Input file").tag(config=True)
+
     output_format = CaselessStrEnum(
         OUTPUT_FORMATS,
         default_value='html',
@@ -41,30 +44,17 @@ class StitchApp(JupyterApp):
     @catch_config_error
     def initialize(self, argv=None):
         super().initialize(argv)
-        pass
+        self.initialize_input()
 
-    def init_documents(self):
-        pass
-
-    def init_writer(self):
-        pass
-
-    def init_postprocessor(self):
-        pass
+    def initialize_input(self):
+        self.input_file = self.extra_args[0]
 
     def start(self):
         super().start()
+        self.convert()
 
-    def init_single_document_resources(self, filename):
-        pass
-
-    def convert_single_document(self, filename):
-        resources = self.init_single_document_resources(self, filename)
-        output, resources = self.export_single_document(
-            filename, resources
-        )
-        writer = self.write_single_document(output, resources)
-        self.post_process(writer)
+    def convert(self):
+        convert_file(self.input_file, 'html', outputfile='test.html')
 
     def post_process(self, writer):
         pass

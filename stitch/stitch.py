@@ -22,6 +22,7 @@ import pypandoc
 # see https://github.com/jupyter/nbconvert/blob/master/nbconvert/preprocessors/execute.py
 CODE = 'code'
 CODEBLOCK = 'CodeBlock'
+OUTPUT_FORMATS = ['html']
 
 KernelPair = namedtuple("KernelPair", "km kc")
 
@@ -29,6 +30,14 @@ KernelPair = namedtuple("KernelPair", "km kc")
 # --------
 # User API
 # --------
+
+def convert_file(input_file, to, extra_args=(), outputfile=None,
+                 filters=None):
+    with open(input_file) as f:
+        source = f.read()
+
+    return convert(source, to, extra_args=extra_args, outputfile=outputfile,
+                   filters=filters)
 
 def convert(source: str, to: str, extra_args=(), outputfile=None,
             filters=None) -> None:
