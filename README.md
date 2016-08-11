@@ -40,3 +40,13 @@ sns.pairplot(df, hue="species")
 ```
 
 ![Side-by-side](comparison.png)
+
+Why limit yourself to python?
+
+```{.ir}
+summary(cars)
+```
+
+```{.ir}
+plot(pressure)
+```

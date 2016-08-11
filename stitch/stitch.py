@@ -76,7 +76,7 @@ def stitch(source: str, kernel_name='python') -> str:
     """
     meta, blocks = tokenize(source)
     needed_kernels = set(extract_kernel_name(block) for block in blocks
-                         if to_execute(block))
+                         if is_executable(block))
     kernels = {name: KernelPair(*start_new_kernel(kernel_name=name))
                for name in needed_kernels}
     for name, kernel in kernels.items():
@@ -90,9 +90,9 @@ def stitch(source: str, kernel_name='python') -> str:
                 new_blocks.append(wrap_input_code(block))
         else:
             new_blocks.append(block)
-        if to_execute(block):
+        if is_executable(block):
             result = execute_block(block, kernels)
-            if to_stich_output(result, attrs):
+            if is_stitchable(result, attrs):
                 result = wrap_output(result)
                 new_blocks.append(result)
 
@@ -108,7 +108,7 @@ def is_code_block(block):
     return is_code  # TODO: echo
 
 
-def to_execute(x):
+def is_executable(x):
     return (x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2] and
             extract_kernel_name(x) is not None)
 
@@ -117,7 +117,7 @@ def to_execute(x):
 # Output Tests
 # ------------
 
-def to_stich_output(result, attrs):
+def is_stitchable(result, attrs):
     return (bool(result) and
             result[0] is not None and
             attrs.get('results') != 'hide')
@@ -326,7 +326,8 @@ def initialize_graphics(name, kp):
         # code = dedent(code) + fmt_code
         # kp.kc.execute(code, store_history=False)
     else:
-        raise ValueError(name)
+        # raise ValueError(name)
+        pass
 
 
 

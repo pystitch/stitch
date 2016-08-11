@@ -40,8 +40,8 @@ def code_block(request):
      {'c': [], 't': 'Space'},
      {'c': 'options', 't': 'Str'}], 't': 'Para'}, False),
 ])
-def test_to_execute(block, expected):
-    result = R.to_execute(block)
+def test_is_executable(block, expected):
+    result = R.is_executable(block)
     assert result is expected
 
 def test_extract_kernel_name(code_block):
