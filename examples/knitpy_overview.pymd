@@ -9,7 +9,7 @@ output:
     keep_md: yes
 ---
 
-This is a port of knitr (http://yihui.name/knitr/) and rmarkdown 
+This is a port of knitr (http://yihui.name/knitr/) and rmarkdown
 (http://rmarkdown.rstudio.com/) to python.
 
 For a complete description of the code format see http://rmarkdown.rstudio.com/ and replace
@@ -43,7 +43,7 @@ the code but only the result.
 print("Only the output will be visible as `echo=False`")
 ```
 
-The next paragraphs explores the code chunk argument `results`. 
+The next paragraphs explores the code chunk argument `results`.
 
 If 'hide', knitpy will not display the code's results in the final document. If 'hold', knitpy
 will delay displaying all output pieces until the end of the chunk. If 'asis', knitpy will pass
@@ -55,16 +55,16 @@ through results without reformatting them (useful if results return raw HTML, et
 print("Only the input is displayed, not the output")
 ```
 
-```{.python results="markup", echo=False}
+```{.python results="markup" echo=False}
 print("This is formatted as markdown:\n**This text** will be bold...")
 ```
 
-```{.python results="asis", echo=False}
+```{.python results="asis" echo=False}
 print("**This text** will be bold...")
 ```
 
-**Note**: with python code it is recommended to use the IPython/Jupyter display system and an 
-appropriate wrapper (see below) to display such output and not `results="asis"`. This makes it 
+**Note**: with python code it is recommended to use the IPython/Jupyter display system and an
+appropriate wrapper (see below) to display such output and not `results="asis"`. This makes it
 possible to convert such output if the output can't be included in the final format.
 
 You can also not show codeblocks at all, but they will be run (not included codeblock sets
@@ -98,7 +98,7 @@ x # still 1
 To remove/hide a codechunk completely, i.e. neither execute it nor show the code, you can use both `eval=False, include=False`: nothing will be
 shown between this text ...
 
-```{.python eval=False, include=False}
+```{.python eval=False include=False}
 x += 1 # this is not executed and not even shown
 ```
 
@@ -117,17 +117,17 @@ print("Text output")
 
 ### Inline code
 
-You can also include code inline: "m=`python 1+1`" (expected: "m=2") 
+You can also include code inline: "m=`python 1+1`" (expected: "m=2")
 
 ### IPython / Jupyter display framework
 
 The display framework is also supported.
 
-Plots will be included as images and included in the document. The filename of the 
-plot is derived from the chunk label ("sinus" in this case). The code is not 
+Plots will be included as images and included in the document. The filename of the
+plot is derived from the chunk label ("sinus" in this case). The code is not
 shown in this case (`echo=False`).
 
-```{.python sinus, echo=False}
+```{.python .sinus echo=False}
 # As this all produces no output, it should go into the same input section...
 import numpy as np
 import matplotlib.pyplot as plt
@@ -135,8 +135,8 @@ y = np.linspace(2, 10)
 line, = plt.plot(y, np.sin(y))
 ```
 
-If a html or similar thing is displayed via the IPython display framework, it will be 
-included 'as is', meaning that apart from `text/plain`-only output, everything else 
+If a html or similar thing is displayed via the IPython display framework, it will be
+included 'as is', meaning that apart from `text/plain`-only output, everything else
 will be included without marking it up as output. Knitpy automagically tries to include only
 formats which are understood by pandoc and the final output format (in some case converting the
 format to one which the final output can handle).
@@ -151,7 +151,7 @@ output formats):
 
 ```{.python}
 import pandas as pd
-pd.set_option("display.width", 200) 
+pd.set_option("display.width", 200)
 s = """This is longer text"""
 df = pd.DataFrame({"a":[1,2,3,4,5],"b":[s,"b","c",s,"e"]})
 df

@@ -1,0 +1,256 @@
+html {
+  font-size: 11px;
+}
+
+@media screen and (min-width: 800px)  { html{ font-size: 12px; }}
+@media screen and (min-width: 900px)  { html{ font-size: 13px; }}
+@media screen and (min-width: 1000px) { html{ font-size: 14px; }}
+@media screen and (min-width: 1100px) { html{ font-size: 15px; }}
+@media screen and (min-width: 1200px) { html{ font-size: 16px; }}
+@media screen and (min-width: 1300px) { html{ font-size: 17px; }}
+
+body {
+  width: 87.5%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 12.5%;
+  font-family: Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+  background-color: #fffff8;
+  color: #111;
+  max-width: 1400px;
+}
+
+h1 { font-weight: 400;
+     margin-top: 4rem;
+     margin-bottom: 1.5rem;
+     font-size: 3.2rem;
+     line-height: 1; }
+
+h2 { font-style: italic;
+     font-weight: 400;
+     margin-top: 2.1rem;
+     margin-bottom: 0;
+     font-size: 2.2rem;
+     line-height: 1; }
+
+h3 { font-style: italic;
+     font-weight: 400;
+     font-size: 1.7rem;
+     margin-top: 2rem;
+     margin-bottom: 0;
+     line-height: 1; }
+
+subtitle { font-style: italic;
+           margin-top: 1rem;
+           margin-bottom: 1rem;
+           font-size: 1.8rem;
+           display: block;
+           line-height: 1; }
+
+table { width: 53%;
+        text-align: right;
+        font-size: 14px;
+        line-height: 1.4;
+        margin-top: 1.4rem;
+        margin-bottom: 1.4rem;
+        margin-left: 1%;
+        margin-right: 1%;
+        border-top: 2px solid #333333;
+        border-bottom: 2px solid #333333;
+        border-collapse: separate;
+        border-spacing: 0 5px;
+        -webkit-font-feature-settings: 'tnum'; /* This is technically redundant */
+        -moz-font-feature-settings: 'tnum';
+        -ms-font-feature-settings: 'tnum'; }
+
+.math { width: 53%; }
+
+thead th { border-bottom: 1px solid #333333;
+           font-weight: 400;
+           border-collapse: separate;
+           border-spacing: 5px 5px;
+           padding: 10px;}
+
+article { position: relative;
+          padding: 5rem 0; }
+
+section { padding-top: 1rem;
+          padding-bottom: 1rem; }
+
+p { font-size: 1rem;
+    line-height: 2rem;
+    margin-top: 1.4rem;
+    margin-bottom: 1.4rem;
+    padding-right: 0;
+    vertical-align: baseline;
+    width: 85%; }
+
+blockquote p { font-size: 1.1rem;
+               width: 50%; }
+
+blockquote footer { width: 50%;
+                    text-align: right; }
+
+img { max-width: 200%; }
+
+sup, sub { vertical-align: baseline;
+           position: relative;
+           top: -0.4rem; }
+
+sub { top: 0.4rem; }
+
+.sidenote-number { font-size: 0.9rem;
+                  color: #f00000; }
+
+footer, pre.code { width: 55%; background-color: transparent;}
+
+.codehilite pre { width: 55%; background-color: transparent;}
+
+@media screen and (max-width: 600px) { p, footer, pre.code { width: 65%; }
+                                       blockquote p, blockquote footer { width: 60%; }}
+@media screen and (max-width: 400px) { p, footer, pre.code { width: 90%; }
+                                       blockquote p, blockquote footer { width: 90%; }}
+
+ol, .rendered_html, .cell, .border-box-sizing, .code_cell, .rendered, .container { background-color: #fffff8; }
+
+#notebook-container {
+    background-color: #fffff8;
+    box-shadow: none;
+    box-sizing: none;
+}
+
+.text_cell_render { background-color: #fffff8; }
+
+.sans { font-family: "Gill Sans", "Gill Sans MT", Calibri, sans-serif; }
+
+.code { font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        color: #222;
+        font-size: 1rem;
+        line-height: 1.6; }
+
+pre.code { padding: 0 2em; }
+
+.fullwidth { max-width: 95%; }
+
+.sidenote, .marginnote { float: right;
+                         clear: right;
+                         margin-right: -60%;
+                         width: 50%;
+                         margin-top: 0;
+                         margin-bottom: 0;
+                         font-size: 1.0rem;
+                         line-height: 1.96;
+                         vertical-align: baseline;
+                         position: relative; }
+
+@media screen and (max-width: 600px) { .sidenote, .marginnote { width: 25%;
+                                                                margin-right: -35%; }}
+@media screen and (max-width: 400px) { .sidenote, .marginnote { display:none; }}
+
+/* a.url { text-decoration: none; */
+/*         word-break: break-all; */
+/*         font-family: "Lucida Console", "Lucida Sans Typewriter", Monaco, "Bitstream Vera Sans Mono", monospace; } */
+
+span .newthought { font-variant: small-caps; }
+
+div .prompt {display:none}
+
+.input_cell { box-sizing: none; }
+.input_area, .output, .output_area, .output_text, .output_subarea, .output_execute_result {
+    background-color: #DEDEDE;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+ol, ul { max-width: 85% }
+li { color: #111; background-color: #fffff8; max-width: 85% }
+
+.cell, .border-box-sizing, .text_cell, .rendered { max-width: 1400px; }
+
+.hentry {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#index > nav {
+  text-align: center;
+  text-transform: uppercase;
+  padding: 14px 0 14px 0;
+  border-bottom: #eeeeee 1px solid;
+  width: 55%;
+}
+
+#index > nav > a { text-decoration: none; }
+
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+
+/* https://github.com/richleland/pygments-css/blob/master/ */
+
+.hll { background-color: #ffffcc }
+.c { color: #999988; font-style: italic } /* Comment */
+.err { color: #a61717; background-color: #e3d2d2 } /* Error */
+.k { color: #000000; font-weight: bold } /* Keyword */
+.o { color: #000000; font-weight: bold } /* Operator */
+.cm { color: #999988; font-style: italic } /* Comment.Multiline */
+.cp { color: #999999; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.c1 { color: #999988; font-style: italic } /* Comment.Single */
+.cs { color: #999999; font-weight: bold; font-style: italic } /* Comment.Special */
+.gd { color: #000000; background-color: #ffdddd } /* Generic.Deleted */
+.ge { color: #000000; font-style: italic } /* Generic.Emph */
+.gr { color: #aa0000 } /* Generic.Error */
+.gh { color: #999999 } /* Generic.Heading */
+.gi { color: #000000; background-color: #ddffdd } /* Generic.Inserted */
+.go { color: #888888 } /* Generic.Output */
+.gp { color: #555555 } /* Generic.Prompt */
+.gs { font-weight: bold } /* Generic.Strong */
+.gu { color: #aaaaaa } /* Generic.Subheading */
+.gt { color: #aa0000 } /* Generic.Traceback */
+.kc { color: #000000; font-weight: bold } /* Keyword.Constant */
+.kd { color: #000000; font-weight: bold } /* Keyword.Declaration */
+.kn { color: #000000; font-weight: bold } /* Keyword.Namespace */
+.kp { color: #000000; font-weight: bold } /* Keyword.Pseudo */
+.kr { color: #000000; font-weight: bold } /* Keyword.Reserved */
+.kt { color: #445588; font-weight: bold } /* Keyword.Type */
+.m { color: #009999 } /* Literal.Number */
+.s { color: #d01040 } /* Literal.String */
+.na { color: #008080 } /* Name.Attribute */
+.nb { color: #0086B3 } /* Name.Builtin */
+.nc { color: #445588; font-weight: bold } /* Name.Class */
+.no { color: #008080 } /* Name.Constant */
+.nd { color: #3c5d5d; font-weight: bold } /* Name.Decorator */
+.ni { color: #800080 } /* Name.Entity */
+.ne { color: #990000; font-weight: bold } /* Name.Exception */
+.nf { color: #990000; font-weight: bold } /* Name.Function */
+.nl { color: #990000; font-weight: bold } /* Name.Label */
+.nn { color: #555555 } /* Name.Namespace */
+.nt { color: #000080 } /* Name.Tag */
+.nv { color: #008080 } /* Name.Variable */
+.ow { color: #000000; font-weight: bold } /* Operator.Word */
+.w { color: #bbbbbb } /* Text.Whitespace */
+.mf { color: #009999 } /* Literal.Number.Float */
+.mh { color: #009999 } /* Literal.Number.Hex */
+.mi { color: #009999 } /* Literal.Number.Integer */
+.mo { color: #009999 } /* Literal.Number.Oct */
+.sb { color: #d01040 } /* Literal.String.Backtick */
+.sc { color: #d01040 } /* Literal.String.Char */
+.sd { color: #d01040 } /* Literal.String.Doc */
+.s2 { color: #d01040 } /* Literal.String.Double */
+.se { color: #d01040 } /* Literal.String.Escape */
+.sh { color: #d01040 } /* Literal.String.Heredoc */
+.si { color: #d01040 } /* Literal.String.Interpol */
+.sx { color: #d01040 } /* Literal.String.Other */
+.sr { color: #009926 } /* Literal.String.Regex */
+.s1 { color: #d01040 } /* Literal.String.Single */
+.ss { color: #990073 } /* Literal.String.Symbol */
+.bp { color: #999999 } /* Name.Builtin.Pseudo */
+.vc { color: #008080 } /* Name.Variable.Class */
+.vg { color: #008080 } /* Name.Variable.Global */
+.vi { color: #008080 } /* Name.Variable.Instance */
+.il { color: #009999 } /* Literal.Number.Integer.Long */
+
+.bk-canvas { position: relative !important;}

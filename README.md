@@ -19,3 +19,24 @@ A high level overview is
 
 The most lines-of-code will be devoted to steps 1, 3, and 4.
 
+# An Example
+
+Code chunks are specified using backticks
+
+```{.python}
+import pandas as pd
+import seaborn as sns
+df = sns.load_dataset("iris")
+```
+
+A kernel maintains the state between code-chunks.
+Graphics are included.
+We can take an example from [seaborn](https://stanford.edu/~mwaskom/software/seaborn/examples/scatterplot_matrix.html):
+
+```{.python}
+sns.set()
+
+sns.pairplot(df, hue="species")
+```
+
+![Side-by-side](comparison.png)

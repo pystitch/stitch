@@ -11,6 +11,7 @@ to pandoc's JSON AST
 7. Use pandoc / pypandoc to convert the AST to output.
 
 """
+import os
 import copy
 import json
 from collections.abc import MutableMapping
@@ -24,6 +25,8 @@ import pypandoc
 CODE = 'code'
 CODEBLOCK = 'CodeBlock'
 OUTPUT_FORMATS = ['html']
+HERE = os.path.dirname(__file__)
+CSS = os.path.join(HERE, 'static', 'default.css')
 
 KernelPair = namedtuple("KernelPair", "km kc")
 
@@ -32,7 +35,7 @@ KernelPair = namedtuple("KernelPair", "km kc")
 # User API
 # --------
 
-def convert_file(input_file, to, extra_args=(), output_file=None,
+def convert_file(input_file, to, extra_args=None, output_file=None,
                  filters=None):
     """
     Convert a markdown ``input_file`` to ``to``.
@@ -47,6 +50,8 @@ def convert_file(input_file, to, extra_args=(), output_file=None,
     """
     with open(input_file) as f:
         source = f.read()
+    if extra_args is None:
+        extra_args = ['--standalone', '--css=%s' % CSS]
 
     return convert(source, to, extra_args=extra_args, output_file=output_file,
                    filters=filters)
@@ -59,6 +64,7 @@ def convert(source: str, to: str, extra_args=(), output_file=None,
     """
     newdoc = stitch(source)
     result = pypandoc.convert_text(newdoc, to, format='json',
+                                   extra_args=extra_args,
                                    outputfile=output_file)
     if output_file is None:
         print(result)
@@ -86,7 +92,7 @@ def stitch(source: str, kernel_name='python') -> str:
             new_blocks.append(block)
         if to_execute(block):
             result = execute_block(block, kernels)
-            if result and result[0] is not None:
+            if to_stich_output(result, attrs):
                 result = wrap_output(result)
                 new_blocks.append(result)
 
@@ -101,9 +107,20 @@ def is_code_block(block):
     is_code = block['t'] == CODEBLOCK
     return is_code  # TODO: echo
 
+
 def to_execute(x):
     return (x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2] and
             extract_kernel_name(x) is not None)
+
+
+# ------------
+# Output Tests
+# ------------
+
+def to_stich_output(result, attrs):
+    return (bool(result) and
+            result[0] is not None and
+            attrs.get('results') != 'hide')
 
 
 # ----------------
