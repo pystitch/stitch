@@ -72,3 +72,4 @@ def test_parse_kernel_arguments(code_block, expected):
 def test_wrap_output(output, expected):
     result = R.wrap_output(output)
     assert result == expected
+

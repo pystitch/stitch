@@ -32,22 +32,34 @@ KernelPair = namedtuple("KernelPair", "km kc")
 # User API
 # --------
 
-def convert_file(input_file, to, extra_args=(), outputfile=None,
+def convert_file(input_file, to, extra_args=(), output_file=None,
                  filters=None):
+    """
+    Convert a markdown ``input_file`` to ``to``.
+
+    Parameters
+    ----------
+    input_file : str
+    to : str
+    extra_args : iterable
+    output_file : str
+    filters : iterable
+    """
     with open(input_file) as f:
         source = f.read()
 
-    return convert(source, to, extra_args=extra_args, outputfile=outputfile,
+    return convert(source, to, extra_args=extra_args, output_file=output_file,
                    filters=filters)
 
-def convert(source: str, to: str, extra_args=(), outputfile=None,
+
+def convert(source: str, to: str, extra_args=(), output_file=None,
             filters=None) -> None:
     """
     Convert a source document to an output file.
     """
     newdoc = stitch(source)
     return pypandoc.convert_text(newdoc, to, format='json',
-                                 outputfile=outputfile)
+                                 outputfile=output_file)
 
 
 def stitch(source: str, kernel_name='python') -> str:
@@ -65,7 +77,9 @@ def stitch(source: str, kernel_name='python') -> str:
     new_blocks = []
     for block in blocks:
         if is_code_block(block):
-            new_blocks.append(wrap_input_code(block))
+            (lang, name), attrs = parse_kernel_arguments(block)
+            if attrs.get('echo', True):
+                new_blocks.append(wrap_input_code(block))
         else:
             new_blocks.append(block)
         if to_execute(block):
@@ -127,6 +141,9 @@ def parse_kernel_arguments(block):
     else:
         raise TypeError("Bad options %s" % options)
     kwargs = dict(block['c'][0][2])
+    kwargs = {k: v == 'True' if v in ('True', 'False') else v
+              for k, v in kwargs.items()}
+
     return (kernel_name, chunk_name), kwargs
 
 

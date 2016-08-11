@@ -54,7 +54,7 @@ class StitchApp(JupyterApp):
         self.convert()
 
     def convert(self):
-        convert_file(self.input_file, 'html', outputfile='test.html')
+        convert_file(self.input_file, 'html', output_file='test.html')
 
     def post_process(self, writer):
         pass
