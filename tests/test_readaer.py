@@ -62,3 +62,12 @@ def test_extract_kernel_name(code_block):
 def test_parse_kernel_arguments(code_block, expected):
     result = R.parse_kernel_arguments(code_block)
     assert result == expected
+
+
+@pytest.mark.parametrize('output, expected', [
+    ([{'text/plain': '2'}],
+     {'t': 'Para', 'c': [{'t': 'Str', 'c': '2'}]}),
+])
+def test_wrap_output(output, expected):
+    result = R.wrap_output(output)
+    assert result == expected

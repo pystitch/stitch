@@ -19,14 +19,14 @@ For a complete description of the code format see http://rmarkdown.rstudio.com/ 
 
 Here are some examples:
 
-```{python}
+```{.python}
 print("Execute some code chunk and show the result")
 ```
 
 Codechunks which contain lines without output (e.g. assign the result or comments) will
 be shown in the same code block:
 
-```{python}
+```{.python}
 # A comment
 text = "All code in the same code block until some output is produced..."
 more_text = "...and some more."
@@ -39,7 +39,7 @@ print(more_text)
 You can use different arguments in the codechunk declaration. Using `echo=False` will not show
 the code but only the result.
 
-```{python echo=False}
+```{.python echo=False}
 print("Only the output will be visible as `echo=False`")
 ```
 
@@ -51,15 +51,15 @@ through results without reformatting them (useful if results return raw HTML, et
 
 `results='hold'` is not yet implemented.
 
-```{python results="hide"}
+```{.python results="hide"}
 print("Only the input is displayed, not the output")
 ```
 
-```{python results="markup", echo=False}
+```{.python results="markup", echo=False}
 print("This is formatted as markdown:\n**This text** will be bold...")
 ```
 
-```{python results="asis", echo=False}
+```{.python results="asis", echo=False}
 print("**This text** will be bold...")
 ```
 
@@ -70,27 +70,27 @@ possible to convert such output if the output can't be included in the final for
 You can also not show codeblocks at all, but they will be run (not included codeblock sets
 `have_run = True`):
 
-```{python include=False}
+```{.python include=False}
 have_run = True
 print("This will not be shown, as include is False")
 ```
 
-```{python include=True}
+```{.python include=True}
 if have_run == True:
     print("'have_run==True': ran the codeblock before this one.")
 ```
 
 Using `eval=False`, one can prevent the evaluation of the codechunk
 
-```{python}
+```{.python}
 x = 1
 ```
 
-```{python eval=False}
+```{.python eval=False}
 x += 1 # this is not executed as eval is False
 ```
 
-```{python}
+```{.python}
 x # still 1
 ```
 
@@ -98,7 +98,7 @@ x # still 1
 To remove/hide a codechunk completely, i.e. neither execute it nor show the code, you can use both `eval=False, include=False`: nothing will be
 shown between this text ...
 
-```{python eval=False, include=False}
+```{.python eval=False, include=False}
 x += 1 # this is not executed and not even shown
 ```
 
@@ -107,11 +107,11 @@ x += 1 # this is not executed and not even shown
 The prefix in front of text output (per default `##`) can be changed via the `comment` chunk
 option to a different string or completely removed by setting it to a empty string `""`or None:
 
-```{python comment="# result:"}
+```{.python comment="# result:"}
 print("Text output")
 ```
 
-```{python comment=""}
+```{.python comment=""}
 print("Text output")
 ```
 
@@ -127,7 +127,7 @@ Plots will be included as images and included in the document. The filename of t
 plot is derived from the chunk label ("sinus" in this case). The code is not 
 shown in this case (`echo=False`).
 
-```{python sinus, echo=False}
+```{.python sinus, echo=False}
 # As this all produces no output, it should go into the same input section...
 import numpy as np
 import matplotlib.pyplot as plt
@@ -141,7 +141,7 @@ will be included without marking it up as output. Knitpy automagically tries to 
 formats which are understood by pandoc and the final output format (in some case converting the
 format to one which the final output can handle).
 
-```{python engine="python"}
+```{.python engine="python"}
 from IPython.core.display import display, HTML
 display(HTML("<strong>strong text</strong>"))
 ```
@@ -149,7 +149,7 @@ display(HTML("<strong>strong text</strong>"))
 It even handles `pandas.DataFrames` (be aware that not all formatting can be converted into all
 output formats):
 
-```{python}
+```{.python}
 import pandas as pd
 pd.set_option("display.width", 200) 
 s = """This is longer text"""
@@ -160,7 +160,7 @@ df
 `pandas.DataFrame` can be represented as `text/plain` or `text/html`, but will default to the html
  version. To force plain text, use either `print(df)` or set the right `pandas` option:
 
-```{python}
+```{.python}
 pd.set_option("display.notebook_repr_html", False)
 df
 # set back the display
@@ -170,7 +170,7 @@ pd.set_option("display.notebook_repr_html", True)
 You can also use package like [tabulate](https://bitbucket.org/astanin/python-tabulate)
 together with `results="asis"` or by wrapping it with the appropriate display class:
 
-```{python results="asis"}
+```{.python results="asis"}
 from tabulate import tabulate
 from IPython.core.display import Markdown
 # either print and use `results="asis"`
@@ -179,23 +179,3 @@ print(tabulate(df, list(df.columns), tablefmt="simple"))
 Markdown(tabulate(df, list(df.columns), tablefmt="simple"))
 ```
 
-Note that the second version (wrapping it in `Markdown`) is preferred, as this marks the output 
-with the right mimetype and therefore can be converted---if that's needed---to something which 
-the output format understands!
-
-Unfortunately, html tables have to be tweaked for the final output format as e.g. too width
-tables spill over the page margin in PDF.
-
-### Error handling
-
-Errors in code are shown with a bold error text:
-
-```{python}
-import sys
-print(sys.not_available)
-```
-
-```{python}
-for x in []:
-print("No indention...")
-```

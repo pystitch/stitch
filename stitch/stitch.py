@@ -13,6 +13,7 @@ to pandoc's JSON AST
 """
 import copy
 import json
+from collections.abc import MutableMapping
 from queue import Empty
 from collections import namedtuple
 from jupyter_client.manager import start_new_kernel
@@ -69,8 +70,9 @@ def stitch(source: str, kernel_name='python') -> str:
             new_blocks.append(block)
         if to_execute(block):
             result = execute_block(block, kernels)
-            result = wrap_output(result)
-            new_blocks.append(result)
+            if result and result[0] is not None:
+                result = wrap_output(result)
+                new_blocks.append(result)
 
     doc = json.dumps([meta, new_blocks])
     return doc
@@ -129,16 +131,25 @@ def parse_kernel_arguments(block):
 
 
 def extract_kernel_name(block):
-    return block['c'][0][1][0].strip('{}')
+    options = block['c'][0][1]
+    if len(options) >= 1:
+        return options[0]
+    else:
+        return None
 
 
 def wrap_output(output):
-    out = output[-1]  # ?
-    order = ['text/plain', 'image/svg+xml', 'image/png']
+    out = output[-1]  # TODO: Multiple outputs
+    if not isinstance(out, MutableMapping):
+        out = {'text/plain': out}  # TODO, this is from print...
+        output = [out]
+
+    # TODO: this is getting messy
+    order = ['text/plain', 'text/html', 'image/svg+xml', 'image/png']
     key = sorted(out, key=lambda x: order.index(x))[-1]
     if key == 'text/plain':
         return Para([Str(output[-1][key])])
-    elif key == 'image/svg+xml':
+    elif key in ('text/html', 'image/svg+xml'):
         return RawBlock('html', output[-1][key])
     elif key == 'image/png':
         data = '<img src="data:image/png;base64,{}">'.format(output[-1][key])
@@ -152,7 +163,8 @@ def tokenize(source: str) -> dict:
 
 
 def to_execute(x):
-    return x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2]
+    return (x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2] and
+            extract_kernel_name(x) is not None)
 
 
 def execute_block(block, kernels, timeout=None):
@@ -238,7 +250,11 @@ def run_code(code, kp, timeout=None):
 
 
 def output_from_msg(msg):
-    return msg['content']['data']
+    """
+
+    """
+    content = msg['content']
+    return content.get('data') or content.get('text')
 
 
 def initialize_graphics(name, kp):
