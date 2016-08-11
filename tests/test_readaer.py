@@ -66,7 +66,8 @@ def test_parse_kernel_arguments(code_block, expected):
 
 @pytest.mark.parametrize('output, expected', [
     ([{'text/plain': '2'}],
-     {'t': 'Para', 'c': [{'t': 'Str', 'c': '2'}]}),
+     {'t': 'Div', 'c': (['', ['output'], []],
+                        [{'t': 'Para', 'c': [{'t': 'Str', 'c': '2'}]}])}),
 ])
 def test_wrap_output(output, expected):
     result = R.wrap_output(output)

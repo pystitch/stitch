@@ -17,7 +17,7 @@ from collections.abc import MutableMapping
 from queue import Empty
 from collections import namedtuple
 from jupyter_client.manager import start_new_kernel
-from pandocfilters import Para, Str, RawBlock
+from pandocfilters import Para, Str, RawBlock, Div
 import pypandoc
 
 # see https://github.com/jupyter/nbconvert/blob/master/nbconvert/preprocessors/execute.py
@@ -148,7 +148,8 @@ def wrap_output(output):
     order = ['text/plain', 'text/html', 'image/svg+xml', 'image/png']
     key = sorted(out, key=lambda x: order.index(x))[-1]
     if key == 'text/plain':
-        return Para([Str(output[-1][key])])
+        # ident, classes, kvs
+        return Div(['', ['output'], []], [Para([Str(output[-1][key])])])
     elif key in ('text/html', 'image/svg+xml'):
         return RawBlock('html', output[-1][key])
     elif key == 'image/png':
