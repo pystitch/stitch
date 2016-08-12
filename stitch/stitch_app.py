@@ -31,12 +31,12 @@ class StitchApp(JupyterApp):
     input_file = Unicode(help="Input file").tag(config=True)
     output_file = Unicode(help="Input file", allow_none=True).tag(config=True)
 
-    output_format = CaselessStrEnum(
+    to = CaselessStrEnum(
         OUTPUT_FORMATS,
         default_value='html',
         config=True,
         help="Format to convert to",
-    )
+    ).tag(config=True)
 
     @default('log_level')
     def _log_level_default(self):
@@ -50,7 +50,11 @@ class StitchApp(JupyterApp):
     def initialize_input(self):
         self.input_file = self.extra_args[0]
         try:
-            self.output_file = self.extra_args[1]
+            self.to = self.extra_args[1]
+        except IndexError:
+            self.to = None
+        try:
+            self.output_file = self.extra_args[2]
         except IndexError:
             self.output_file = None
 
@@ -59,7 +63,7 @@ class StitchApp(JupyterApp):
         self.convert()
 
     def convert(self):
-        convert_file(self.input_file, 'html', output_file=self.output_file)
+        convert_file(self.input_file, self.to, output_file=self.output_file)
 
     def post_process(self, writer):
         pass

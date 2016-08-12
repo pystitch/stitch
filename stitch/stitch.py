@@ -24,7 +24,7 @@ import pypandoc
 # see https://github.com/jupyter/nbconvert/blob/master/nbconvert/preprocessors/execute.py
 CODE = 'code'
 CODEBLOCK = 'CodeBlock'
-OUTPUT_FORMATS = ['html']
+OUTPUT_FORMATS = ['html', 'latex']
 HERE = os.path.dirname(__file__)
 CSS = os.path.join(HERE, 'static', 'default.css')
 
@@ -123,6 +123,21 @@ def is_stitchable(result, attrs):
             attrs.get('results') != 'hide')
 
 
+# ----------
+# Formatting
+# ----------
+def format_input_prompt(code, number):
+    start = 'In [{}]: '.format(number)
+    split = code.split('\n')
+    rest = ['{}...: '.format(' ' * (len(start) - 5)) for x in split[1:]]
+    formatted = '\n'.join(l + r for l, r in zip([start] + rest, split))
+    return formatted
+
+
+def format_output_prompt(output, number):
+    pass
+
+
 # ----------------
 # Input Processing
 # ----------------
@@ -131,15 +146,11 @@ def tokenize(source: str) -> dict:
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
 
 
-def format_input_code(code):
-    return '## ' + code.replace('\n', '\n## ')
-
-
-def wrap_input_code(block):
+def wrap_input_code(block, execution_count):
     # TODO: IPython In / Out formatting
     new = copy.deepcopy(block)
     code = block['c'][1]
-    new['c'][1] = format_input_code(code)
+    new['c'][1] = format_input_prompt(code, execution_count)
     return new
 
 
@@ -297,7 +308,7 @@ def run_code(code, kp, timeout=None):
             pass
             # self.log.error("unhandled iopub msg: " + msg_type)
         else:
-            outs.append(out)
+            outs.append((out, msg))
 
     return outs
 
