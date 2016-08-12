@@ -1,5 +1,7 @@
 # Stitch
 
+[![Build Status](https://travis-ci.org/TomAugspurger/stitch.svg?branch=master)](https://travis-ci.org/TomAugspurger/stitch)
+
 An experimental knitr-like library, in Python.
 
 You should use [knitpy](https://github.com/janschulz/knitpy/) instead.
