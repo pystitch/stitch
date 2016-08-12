@@ -36,11 +36,11 @@ setup(
     # keywords='sample setuptools development',
     packages=find_packages(exclude=['docs', 'tests']),
 
-    install_requires=['jupyter_core', 'traitlets'],
+    install_requires=['jupyter_core', 'traitlets', 'ipython', 'jupyter_client',
+                      'nbconvert', 'pandocfilters', 'pypandoc'],
 
     extras_require={
-        'dev': ['sphinx'],
-        'test': ['pytest'],
+        'test': ['pytest', 'pytest-cov', 'sphinx'],
     },
     # package_data={
     #     'sample': ['package_data.dat'],

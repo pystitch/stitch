@@ -1,0 +1,14 @@
+language: python
+python:
+  - 3.4
+  - 3.5
+notifications:
+  email: false
+
+# Install packages
+install:
+  - "pip install -e .[dev]"
+
+# Run test
+script:
+  - "py.test tests --cov=stitch --cov-report html --run-slow tests/"
