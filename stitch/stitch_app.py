@@ -1,3 +1,9 @@
+'''
+Command line interface, built on traitlets.
+'''
+# Copyright (c) Jan Schulz <jasc@gmx.net>
+# Copyright (c) IPython Development Team.
+# Distributed under the terms of the Modified BSD License.
 import logging
 
 from jupyter_core.application import JupyterApp, base_aliases

@@ -11,6 +11,10 @@ to pandoc's JSON AST
 7. Use pandoc / pypandoc to convert the AST to output.
 
 """
+# Adapted from knitpy and nbcovert:
+# Copyright (c) Jan Schulz <jasc@gmx.net>
+# Copyright (c) IPython Development Team.
+# Distributed under the terms of the Modified BSD License.
 import os
 import copy
 import json
@@ -124,7 +128,7 @@ def is_code_block(block):
 
 
 def is_executable(x, lang, attrs):
-    return (x['t'] == CODEBLOCK and attrs.get('eval') is not False and
+    return (is_code_block(x) and attrs.get('eval') is not False and
             lang is not None)
 
 
@@ -149,6 +153,13 @@ def format_input_prompt(code, number):
     return formatted
 
 
+def wrap_input_code(block, execution_count):
+    new = copy.deepcopy(block)
+    code = block['c'][1]
+    new['c'][1] = format_input_prompt(code, execution_count)
+    return new
+
+
 def format_output_prompt(output, number):
     pass
 
@@ -159,14 +170,6 @@ def format_output_prompt(output, number):
 
 def tokenize(source: str) -> dict:
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
-
-
-def wrap_input_code(block, execution_count):
-    # TODO: IPython In / Out formatting
-    new = copy.deepcopy(block)
-    code = block['c'][1]
-    new['c'][1] = format_input_prompt(code, execution_count)
-    return new
 
 
 def parse_kernel_arguments(block):
@@ -219,8 +222,6 @@ def extract_kernel_name(block):
 # -----------------
 # Output Processing
 # -----------------
-
-
 def wrap_output(message_pairs, execution_count):
     output = [message[0] for message in message_pairs]
     out = output[-1]  # TODO: Multiple outputs
@@ -246,7 +247,6 @@ def wrap_output(message_pairs, execution_count):
 # --------------
 # Code Execution
 # --------------
-
 def execute_block(block, kp, timeout=None):
     # see nbconvert.run_cell
     code = block['c'][1]
