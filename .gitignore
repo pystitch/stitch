@@ -11,3 +11,4 @@ htmlcov/
 .Rhistory
 
 *.html
+*.pdf

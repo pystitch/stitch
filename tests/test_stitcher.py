@@ -10,14 +10,22 @@ HERE = os.path.dirname(__file__)
 
 
 @pytest.fixture
+def document_path():
+    "Path to a markdown document"
+    return os.path.join(HERE, 'data', 'small.md')
+
+
+@pytest.fixture
 def document():
-    with open(os.path.join(HERE, 'data', 'test1.md')) as f:
+    "In-memory markdown document"
+    with open(os.path.join(HERE, 'data', 'small.md')) as f:
         doc = f.read()
     return doc
 
 
 @pytest.fixture
 def as_json(document):
+    "JSON representation of the markdown document"
     return json.loads(pypandoc.convert_text(document, 'json', format='markdown'))
 
 
@@ -109,3 +117,14 @@ class TestKernelArgs:
     def test_extract_kernel_name(self, block, expected):
         result = R.extract_kernel_name(block)
         assert result == expected
+
+
+class TestIntegration:
+
+    @pytest.mark.slow
+    def test_from_file(self, document_path):
+        R.convert_file(document_path, 'html')
+
+    @pytest.mark.slow
+    def test_from_source(self, document):
+        R.convert(document, 'html')
