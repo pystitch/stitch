@@ -40,7 +40,7 @@ setup(
                       'nbconvert', 'pandocfilters', 'pypandoc'],
 
     extras_require={
-        'test': ['pytest', 'pytest-cov', 'sphinx'],
+        'dev': ['pytest', 'pytest-cov', 'sphinx'],
     },
     # package_data={
     #     'sample': ['package_data.dat'],
