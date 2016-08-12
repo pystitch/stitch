@@ -18,7 +18,7 @@ to pandoc's JSON AST
 import os
 import copy
 import json
-from typing import List, Tuple, Optional
+from typing import List, Optional
 from collections import namedtuple
 from queue import Empty
 
