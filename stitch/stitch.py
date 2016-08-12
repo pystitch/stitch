@@ -19,13 +19,15 @@ import os
 import copy
 import json
 from typing import List, Tuple, Optional
-from collections.abc import MutableMapping
-from queue import Empty
 from collections import namedtuple
+from queue import Empty
+
 from jupyter_client.manager import start_new_kernel
+from nbconvert.utils.base import NbConvertBase
 from pandocfilters import Para, Str, RawBlock, Div
 import pypandoc
 
+DISPLAY_PRIORITY = NbConvertBase().display_data_priority
 # see https://github.com/jupyter/nbconvert/blob/master/nbconvert/preprocessors/execute.py
 CODE = 'code'
 CODEBLOCK = 'CodeBlock'
@@ -103,17 +105,17 @@ def stitch(source: str) -> str:
             # even if the key is present
             if lang not in kernels:
                 kernel = kernels.setdefault(lang, kernel_factory(lang))
-            message_pairs = execute_block(block, kernel)
-            execution_count = extract_execution_count(message_pairs)
+            messages = execute_block(block, kernel)
+            execution_count = extract_execution_count(messages)
 
         # Now handle input formatting
         if attrs.get('echo', True):
             new_blocks.append(wrap_input_code(block, execution_count))
 
         # And output formatting
-        if is_stitchable(message_pairs, attrs):
-            result = wrap_output(message_pairs, execution_count)
-            new_blocks.append(result)
+        if is_stitchable(messages, attrs):
+            result = wrap_output(messages, execution_count)
+            new_blocks.extend(result)
 
     doc = json.dumps([meta, new_blocks])
     return doc
@@ -222,27 +224,55 @@ def extract_kernel_name(block):
 # -----------------
 # Output Processing
 # -----------------
-def wrap_output(message_pairs, execution_count):
-    output = [message[0] for message in message_pairs]
-    out = output[-1]  # TODO: Multiple outputs
-    if not isinstance(out, MutableMapping):
-        out = {'text/plain': out}  # TODO, this is from print...
-        output = [out]
 
-    # TODO: this is getting messy
-    order = ['text/plain', 'text/latex', 'text/html', 'image/svg+xml', 'image/png']
-    key = sorted(out, key=lambda x: order.index(x))[-1]
-    if key == 'text/plain':
-        # ident, classes, kvs
-        return Div(['', ['output'], []], [Para([Str(output[-1][key])])])
-    elif key in ('text/html', 'image/svg+xml'):
-        return RawBlock('html', output[-1][key])
-    elif key == 'image/png':
-        data = '<img src="data:image/png;base64,{}">'.format(output[-1][key])
-        return RawBlock('html', data)
+def plain_output(text):
+    block = Div(['', ['output'], []], [Para([Str(text)])])
+    return block
 
-    return Para([Str(output[-1][key])])
 
+def wrap_output(messages, execution_count):
+    '''
+    stdout is wrapped in a code block?
+    other stuff is wrapped.
+
+    return a list of blocks
+    '''
+    # messsage_pairs can come from stdout or the io stream (maybe others?)
+    std_out_messages = [x for x in messages if is_stdout(x)]
+    display_messages = [x for x in messages if not is_stdout(x)]
+
+    output_blocks = []
+
+    # Handle all stdout first...
+    for message in std_out_messages:
+        text = message['content']['text']
+        output_blocks.append(plain_output(text))
+
+    order = dict(
+        (x[1], x[0]) for x in enumerate(NbConvertBase().display_data_priority)
+    )
+
+    for message in display_messages:
+        # TODO: traceback
+        all_data = message['content']['data']
+        key = sorted(all_data.keys(), key=lambda k: order[k])[0]
+        data = all_data[key]
+
+        if key == 'text/plain':
+            # ident, classes, kvs
+            block = plain_output(data)
+        elif key in ('text/html', 'image/svg+xml'):
+            block = RawBlock('html', data)
+        elif key == 'image/png':
+            block = RawBlock(
+                'html', '<img src="data:image/png;base64,{}">'.format(data)
+            )
+        output_blocks.append(block)
+    return output_blocks
+
+
+def is_stdout(message):
+    return message['content'].get('name') == 'stdout'
 
 # --------------
 # Code Execution
@@ -250,11 +280,23 @@ def wrap_output(message_pairs, execution_count):
 def execute_block(block, kp, timeout=None):
     # see nbconvert.run_cell
     code = block['c'][1]
-    message_pairs = run_code(code, kp, timeout=timeout)
-    return message_pairs
+    messages = run_code(code, kp, timeout=timeout)
+    return messages
 
 
-def run_code(code, kp, timeout=None):
+def run_code(code: str, kp: KernelPair, timeout=None) -> List:
+    '''
+    Execute a code chunk, capturing the output.
+
+    Parameters
+    ----------
+    code : str
+    kp : KernelPair
+
+    Returns
+    -------
+    outputs : List
+    '''
     msg_id = kp.kc.execute(code)
     while True:
         try:
@@ -280,9 +322,9 @@ def run_code(code, kp, timeout=None):
             # not our reply
             continue
 
-    message_pairs = []
+    messages = []
 
-    while True:
+    while True:  # until idle message
         try:
             # We've already waited for execute_reply, so all output
             # should already be waiting. However, on slow networks, like
@@ -311,35 +353,24 @@ def run_code(code, kp, timeout=None):
         elif msg_type == 'execute_input':
             continue
         elif msg_type == 'clear_output':
-            message_pairs = []
+            messages = []
             continue
         elif msg_type.startswith('comm'):
             continue
 
         try:
-            out = output_from_msg(msg)
+            messages.append(msg)
         except ValueError:
             pass
             # self.log.error("unhandled iopub msg: " + msg_type)
-        else:
-            message_pairs.append((out, msg))
 
-    return message_pairs
-
-
-def output_from_msg(msg):
-    """
-
-    """
-    content = msg['content']
-    return content.get('data') or content.get('text')
+    return messages
 
 
 def extract_execution_count(
-        message_pairs: List[Tuple[dict, dict]]) -> Optional[int]:
+        messages: List[dict]) -> Optional[int]:
     '''
     '''
-    messages = [x[1] for x in message_pairs]
     for message in messages:
         count = message['content'].get('execution_count')
         if count is not None:
