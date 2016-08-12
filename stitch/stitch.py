@@ -14,6 +14,7 @@ to pandoc's JSON AST
 import os
 import copy
 import json
+from typing import List, Tuple, Optional
 from collections.abc import MutableMapping
 from queue import Empty
 from collections import namedtuple
@@ -70,31 +71,45 @@ def convert(source: str, to: str, extra_args=(), output_file=None,
         print(result)
 
 
+def kernel_factory(kernel_name):
+    print('Starting kernel: ', kernel_name)
+    return KernelPair(*start_new_kernel(kernel_name=kernel_name))
+
+
 def stitch(source: str) -> str:
     """
     Execute code blocks, stitching the outputs back into a file.
     """
     meta, blocks = tokenize(source)
-    needed_kernels = set(extract_kernel_name(block) for block in blocks
-                         if is_executable(block))
-    kernels = {name: KernelPair(*start_new_kernel(kernel_name=name))
-               for name in needed_kernels}
+    kernels = {}
+
     for name, kernel in kernels.items():
         initialize_graphics(name, kernel)
 
     new_blocks = []
     for block in blocks:
-        if is_code_block(block):
-            (lang, name), attrs = parse_kernel_arguments(block)
-            if attrs.get('echo', True):
-                new_blocks.append(wrap_input_code(block))
-        else:
+        if not is_code_block(block):
             new_blocks.append(block)
-        if is_executable(block):
-            result = execute_block(block, kernels)
-            if is_stitchable(result, attrs):
-                result = wrap_output(result)
-                new_blocks.append(result)
+            continue
+        # We should only have code blocks now...
+        # Execute first, to get prompt numbers
+        (lang, name), attrs = parse_kernel_arguments(block)
+        if is_executable(block, lang, attrs):
+            # still need to check, since kernel_factory(lang) is executaed
+            # even if the key is present
+            if lang not in kernels:
+                kernel = kernels.setdefault(lang, kernel_factory(lang))
+            message_pairs = execute_block(block, kernel)
+            execution_count = extract_execution_count(message_pairs)
+
+        # Now handle input formatting
+        if attrs.get('echo', True):
+            new_blocks.append(wrap_input_code(block, execution_count))
+
+        # And output formatting
+        if is_stitchable(message_pairs, attrs):
+            result = wrap_output(message_pairs, execution_count)
+            new_blocks.append(result)
 
     doc = json.dumps([meta, new_blocks])
     return doc
@@ -108,9 +123,9 @@ def is_code_block(block):
     return is_code  # TODO: echo
 
 
-def is_executable(x):
-    return (x['t'] == CODEBLOCK and ['eval', 'False'] not in x['c'][0][2] and
-            extract_kernel_name(x) is not None)
+def is_executable(x, lang, attrs):
+    return (x['t'] == CODEBLOCK and attrs.get('eval') is not False and
+            lang is not None)
 
 
 # ------------
@@ -181,7 +196,7 @@ def parse_kernel_arguments(block):
     if len(options) == 0:
         pass
     elif len(options) == 1:
-        kernel_name = options[0]
+        kernel_name = options[0].strip('{}').strip()
     elif len(options) == 2:
         kernel_name, chunk_name = options
     else:
@@ -206,7 +221,8 @@ def extract_kernel_name(block):
 # -----------------
 
 
-def wrap_output(output):
+def wrap_output(message_pairs, execution_count):
+    output = [message[0] for message in message_pairs]
     out = output[-1]  # TODO: Multiple outputs
     if not isinstance(out, MutableMapping):
         out = {'text/plain': out}  # TODO, this is from print...
@@ -231,13 +247,11 @@ def wrap_output(output):
 # Code Execution
 # --------------
 
-def execute_block(block, kernels, timeout=None):
+def execute_block(block, kp, timeout=None):
     # see nbconvert.run_cell
-    kc = kernels[extract_kernel_name(block)]
     code = block['c'][1]
-    outs = run_code(code, kc, timeout=timeout)
-    return outs
-    # log
+    message_pairs = run_code(code, kp, timeout=timeout)
+    return message_pairs
 
 
 def run_code(code, kp, timeout=None):
@@ -266,7 +280,7 @@ def run_code(code, kp, timeout=None):
             # not our reply
             continue
 
-    outs = []
+    message_pairs = []
 
     while True:
         try:
@@ -297,7 +311,7 @@ def run_code(code, kp, timeout=None):
         elif msg_type == 'execute_input':
             continue
         elif msg_type == 'clear_output':
-            outs = []
+            message_pairs = []
             continue
         elif msg_type.startswith('comm'):
             continue
@@ -308,9 +322,9 @@ def run_code(code, kp, timeout=None):
             pass
             # self.log.error("unhandled iopub msg: " + msg_type)
         else:
-            outs.append((out, msg))
+            message_pairs.append((out, msg))
 
-    return outs
+    return message_pairs
 
 
 def output_from_msg(msg):
@@ -319,6 +333,17 @@ def output_from_msg(msg):
     """
     content = msg['content']
     return content.get('data') or content.get('text')
+
+
+def extract_execution_count(
+        message_pairs: List[Tuple[dict, dict]]) -> Optional[int]:
+    '''
+    '''
+    messages = [x[1] for x in message_pairs]
+    for message in messages:
+        count = message['content'].get('execution_count')
+        if count is not None:
+            return count
 
 
 def initialize_graphics(name, kp):

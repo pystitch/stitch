@@ -40,16 +40,21 @@ def code_block(request):
                    code]}
     return block
 
-@pytest.mark.parametrize('block, expected', [
+@pytest.mark.parametrize('block, lang, attrs, expected', [
     ({'t': 'CodeBlock',
       'c': [['', ['{python}'], []],
-            'def f(x):\n    return x * 2\n\nf(2)']}, True),
+            'def f(x):\n    return x * 2\n\nf(2)']}, 'python', {}, True),
+
     ({'c': [{'c': 'With', 't': 'Str'},
      {'c': [], 't': 'Space'},
-     {'c': 'options', 't': 'Str'}], 't': 'Para'}, False),
+     {'c': 'options', 't': 'Str'}], 't': 'Para'}, '', {}, False),
+
+    ({'t': 'CodeBlock',
+      'c': [['', ['{r}'], []],
+            '2+2']}, 'r', {'eval': False}, False),
 ])
-def test_is_executable(block, expected):
-    result = R.is_executable(block)
+def test_is_executable(block, lang, attrs, expected):
+    result = R.is_executable(block, lang, attrs)
     assert result is expected
 
 def test_extract_kernel_name(code_block):
@@ -72,13 +77,17 @@ def test_parse_kernel_arguments(code_block, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize('output, expected', [
+@pytest.mark.parametrize('output, message, expected', [
     ([{'text/plain': '2'}],
+     {'content': {'execution_count': '1'}},
      {'t': 'Div', 'c': (['', ['output'], []],
-                        [{'t': 'Para', 'c': [{'t': 'Str', 'c': '2'}]}])}),
+                        [{'t': 'Para',
+                          'c': [{'t': 'Str',
+                                 'c': 'Out[1]: 2'}]}])}),
 ])
-def test_wrap_output(output, expected):
-    result = R.wrap_output(output)
+@pytest.mark.xfail
+def test_wrap_output(output, message, expected):
+    result = R.wrap_output(output, message)
     assert result == expected
 
 

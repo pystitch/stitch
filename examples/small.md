@@ -5,7 +5,7 @@ author: test author
 
 # This is a small example
 
-```{python}
+```{.python}
 def f(x):
     return x * 2
 
