@@ -38,5 +38,10 @@ import matplotlib.pyplot as plt
 plt.plot(range(4), range(4))
 ```
 
+```{.python}
+print("2 + 2 is")
+2 + 2
+```
+
 Fin.
 
