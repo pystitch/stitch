@@ -230,6 +230,11 @@ def plain_output(text):
     return block
 
 
+def pytb(text):
+    # TODO
+    pass
+
+
 def wrap_output(messages, execution_count):
     '''
     stdout is wrapped in a code block?
@@ -253,20 +258,23 @@ def wrap_output(messages, execution_count):
     )
 
     for message in display_messages:
-        # TODO: traceback
-        all_data = message['content']['data']
-        key = sorted(all_data.keys(), key=lambda k: order[k])[0]
-        data = all_data[key]
+        if message['header']['msg_type'] == 'error':
+            block = plain_output('\n'.join(message['content']['traceback']))
+        else:
+            # TODO: traceback
+            all_data = message['content']['data']
+            key = sorted(all_data.keys(), key=lambda k: order[k])[0]
+            data = all_data[key]
 
-        if key == 'text/plain':
-            # ident, classes, kvs
-            block = plain_output(data)
-        elif key in ('text/html', 'image/svg+xml'):
-            block = RawBlock('html', data)
-        elif key == 'image/png':
-            block = RawBlock(
-                'html', '<img src="data:image/png;base64,{}">'.format(data)
-            )
+            if key == 'text/plain':
+                # ident, classes, kvs
+                block = plain_output(data)
+            elif key in ('text/html', 'image/svg+xml'):
+                block = RawBlock('html', data)
+            elif key == 'image/png':
+                block = RawBlock(
+                    'html', '<img src="data:image/png;base64,{}">'.format(data)
+                )
         output_blocks.append(block)
     return output_blocks
 
