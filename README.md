@@ -5,21 +5,40 @@
 An experimental knitr-like library, in Python.
 
 You should use [knitpy](https://github.com/janschulz/knitpy/) instead.
-I wanted to see if there was a simpler way of doing things.
+This is an unfinished, worse version of it.
+However, I wanted to see if there was a simpler way of doing things.
 
 # Design
 
-The goal was to keep `stitch` extremely simple by reusing existing libraries.
-A high level overview is
+The goal was to keep `stitch` itself extremely simple by reusing existing libraries.
+A high level overview of our tasks is
 
-1. A CLI for execution and configuration (building of traitlets)
-2. Convert a Markdown document to Pandoc's JSON-based AST (using pandoc/pypandoc entirely)
-3. Extract code-chunks and execute them in a Jupyter kernel (using `jupyter-client`)
-4. Transform the outputs of step 3 into pandocs AST (using pandocfilters)
-5. Stitch the outputs of 4 into the main document
-6. Pass the new JSON AST (with outputs) into pandoc, which converts to the final output
+1. Command-line Interface
+2. Parse markdown file
+3. Execute code chunks, capturing the output
+4. Collate execution output into the document
+5. Render to final output
 
-The most lines-of-code will be devoted to steps 1, 3, and 4.
+Fortunately the building blocks are all there.
+
+We reuse
+
+- [`pandoc`](http://pandoc.org) via [`pypandoc`](https://pypi.python.org/pypi/pypandoc) for parsing markdown and rendering the final output
+- [`jupyter`](http://jupyter.readthedocs.io/en/latest/) for language kernels, executing code, and collecting the output
+- Use [`pandocfilters`](https://github.com/jgm/pandocfilters) to collate the execution output into the document
+
+So all `stitch` has to do is to provide a command-line interface, scan the document for code chunks, manage some kernels, hand the code to the kernels, pass the output to an appropriate `pandocfilter`.
+
+The biggest departure from `knitpy` is the use of pandoc's JSON AST.
+This is what you get from
+
+```
+$ pandoc -t json input.md
+```
+
+This saves us from having do any kind of custom parsing of the markdown.
+The only drawback so far is somewhat inscrutable Haskell exceptions if `stitch`
+happens to produce a bad document.
 
 # An Example
 
