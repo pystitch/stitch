@@ -26,6 +26,7 @@ The most lines-of-code will be devoted to steps 1, 3, and 4.
 Code chunks are specified using backticks
 
 ```{.python}
+%matplotlib inline
 import pandas as pd
 import seaborn as sns
 df = sns.load_dataset("iris")
@@ -37,18 +38,8 @@ We can take an example from [seaborn](https://stanford.edu/~mwaskom/software/sea
 
 ```{.python}
 sns.set()
-
-sns.pairplot(df, hue="species")
+sns.pairplot(df, hue="species");
 ```
 
 ![Side-by-side](comparison.png)
 
-Why limit yourself to python?
-
-```{.ir}
-head(cars)
-```
-
-```{.ir}
-plot(pressure)
-```

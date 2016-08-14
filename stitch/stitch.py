@@ -383,7 +383,7 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
                 break
             else:
                 continue
-        elif msg_type in ('execute_input', 'execute_result'):
+        elif msg_type in ('execute_input', 'execute_result', 'display_data'):
             # Keep `execute_input` just for execution_count if theres
             # no result
             messages.append(msg)

@@ -172,12 +172,13 @@ class TestFormatters:
         assert result == expected
 
 
+@pytest.mark.slow
 class TestIntegration:
 
-    @pytest.mark.slow
     def test_from_file(self, document_path):
         R.convert_file(document_path, 'html')
 
-    @pytest.mark.slow
     def test_from_source(self, document):
         R.convert(document, 'html')
+
+    # TODO: display data tests
