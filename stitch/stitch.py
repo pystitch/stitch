@@ -292,7 +292,7 @@ def wrap_output(messages, execution_count):
         else:
             # TODO: traceback
             all_data = message['content']['data']
-            key = sorted(all_data.keys(), key=lambda k: order[k])[0]
+            key = min(all_data.keys(), key=lambda k: order[k])
             data = all_data[key]
 
             if key == 'text/plain':

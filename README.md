@@ -30,11 +30,7 @@ We reuse
 So all `stitch` has to do is to provide a command-line interface, scan the document for code chunks, manage some kernels, hand the code to the kernels, pass the output to an appropriate `pandocfilter`.
 
 The biggest departure from `knitpy` is the use of pandoc's JSON AST.
-This is what you get from
-
-```
-$ pandoc -t json input.md
-```
+This is what you get from `pandoc -t json input.md`
 
 This saves us from having do any kind of custom parsing of the markdown.
 The only drawback so far is somewhat inscrutable Haskell exceptions if `stitch`
