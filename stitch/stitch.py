@@ -1,15 +1,6 @@
 """
-The short version is
-
-1. Use pandoc / pypandoc to convert markdown (or whaterver)
-to pandoc's JSON AST
-2. Walk the AST looking for code-blocks that are to be executed
-3. Submit code-blocks to the appropriate kernel
-4. Capture output
-5. Convert outupt to pandoc's JSON AST
-6. stitch output in after the original code block
-7. Use pandoc / pypandoc to convert the AST to output.
-
+Convert markdown files, executing code chunks and stitching
+in the output.
 """
 # Adapted from knitpy and nbcovert:
 # Copyright (c) Jan Schulz <jasc@gmx.net>
@@ -18,7 +9,7 @@ to pandoc's JSON AST
 import os
 import copy
 import json
-from typing import List, Optional
+from typing import List, Optional, Iterable
 from collections import namedtuple
 from queue import Empty
 
@@ -28,7 +19,6 @@ from pandocfilters import Para, Str, RawBlock, Div
 import pypandoc
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
-# see https://github.com/jupyter/nbconvert/blob/master/nbconvert/preprocessors/execute.py
 CODE = 'code'
 CODEBLOCK = 'CodeBlock'
 OUTPUT_FORMATS = ['html', 'latex']
@@ -42,8 +32,10 @@ KernelPair = namedtuple("KernelPair", "km kc")
 # User API
 # --------
 
-def convert_file(input_file, to, extra_args=None, output_file=None,
-                 filters=None):
+def convert_file(input_file: str,
+                 to: str,
+                 extra_args: Iterable[str]=None,
+                 output_file: Optional[str]=None) -> None:
     """
     Convert a markdown ``input_file`` to ``to``.
 
@@ -57,15 +49,15 @@ def convert_file(input_file, to, extra_args=None, output_file=None,
     """
     with open(input_file) as f:
         source = f.read()
+    # TODO: Put all settings app configurable.
     if extra_args is None:
         extra_args = ['--standalone', '--css=%s' % CSS]
 
-    return convert(source, to, extra_args=extra_args, output_file=output_file,
-                   filters=filters)
+    convert(source, to, extra_args=extra_args, output_file=output_file)
 
 
-def convert(source: str, to: str, extra_args=(), output_file=None,
-            filters=None) -> None:
+def convert(source: str, to: str, extra_args: Iterable[str]=(),
+            output_file: str=None) -> None:
     """
     Convert a source document to an output file.
     """
@@ -77,8 +69,20 @@ def convert(source: str, to: str, extra_args=(), output_file=None,
         print(result)
 
 
-def kernel_factory(kernel_name):
-    print('Starting kernel: ', kernel_name)
+def kernel_factory(kernel_name: str) -> KernelPair:
+    """
+    Start a new kernel.
+
+    Parameters
+    ----------
+    kernel_name : str
+
+    Returns
+    -------
+    KernalPair: namedtuple
+      - km (KernelManager)
+      - kc (KernelClient)
+    """
     return KernelPair(*start_new_kernel(kernel_name=kernel_name))
 
 
@@ -102,17 +106,17 @@ def stitch(source: str) -> str:
         (lang, name), attrs = parse_kernel_arguments(block)
         if is_executable(block, lang, attrs):
             # still need to check, since kernel_factory(lang) is executaed
-            # even if the key is present
+            # even if the key is present, only want one kernel / lang
             if lang not in kernels:
                 kernel = kernels.setdefault(lang, kernel_factory(lang))
             messages = execute_block(block, kernel)
             execution_count = extract_execution_count(messages)
 
-        # Now handle input formatting
+        # ... now handle input formatting...
         if attrs.get('echo', True):
             new_blocks.append(wrap_input_code(block, execution_count))
 
-        # And output formatting
+        # ... and output formatting
         if is_stitchable(messages, attrs):
             result = wrap_output(messages, execution_count)
             new_blocks.extend(result)
@@ -129,8 +133,13 @@ def is_code_block(block):
     return is_code  # TODO: echo
 
 
-def is_executable(x, lang, attrs):
-    return (is_code_block(x) and attrs.get('eval') is not False and
+def is_executable(block, lang, attrs):
+    """
+    Return whether a block should be executed.
+    Must be a code_block, and must not have ``eval=False`` in the block
+    arguments, and ``lang`` (kernel_name) must not be None.
+    """
+    return (is_code_block(block) and attrs.get('eval') is not False and
             lang is not None)
 
 
@@ -139,6 +148,11 @@ def is_executable(x, lang, attrs):
 # ------------
 
 def is_stitchable(result, attrs):
+    """
+    Return whether an output ``result`` should be included in the output.
+    ``result`` should not be empty or None, and ``attrs`` should not
+    include ``{'results': 'hide'}``.
+    """
     return (bool(result) and
             result[0] is not None and
             attrs.get('results') != 'hide')
@@ -148,9 +162,19 @@ def is_stitchable(result, attrs):
 # Formatting
 # ----------
 def format_input_prompt(code, number):
+    """
+    Wrap the input code in IPython style ``In [X]:`` markers.
+    """
     start = 'In [{}]: '.format(number)
     split = code.split('\n')
-    rest = ['{}...: '.format(' ' * (len(start) - 5)) for x in split[1:]]
+
+    def trailing_space(x):
+        # all blank lines shouldn't have a trailing space after ...:
+        return '' if x == '' else ' '
+
+    rest = ['{}...:{}'.format(' ' * (len(start) - 5),
+                              trailing_space(x))
+            for x in split[1:]]
     formatted = '\n'.join(l + r for l, r in zip([start] + rest, split))
     return formatted
 
@@ -163,6 +187,7 @@ def wrap_input_code(block, execution_count):
 
 
 def format_output_prompt(output, number):
+    # TODO
     pass
 
 
@@ -171,6 +196,9 @@ def format_output_prompt(output, number):
 # ----------------
 
 def tokenize(source: str) -> dict:
+    """
+    Convert a document to pandoc's JSON AST.
+    """
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
 
 
@@ -243,8 +271,9 @@ def wrap_output(messages, execution_count):
     return a list of blocks
     '''
     # messsage_pairs can come from stdout or the io stream (maybe others?)
-    std_out_messages = [x for x in messages if is_stdout(x)]
-    display_messages = [x for x in messages if not is_stdout(x)]
+    output_messages = [x for x in messages if not is_execute_input(x)]
+    std_out_messages = [x for x in output_messages if is_stdout(x)]
+    display_messages = [x for x in output_messages if not is_stdout(x)]
 
     output_blocks = []
 
@@ -282,6 +311,11 @@ def wrap_output(messages, execution_count):
 def is_stdout(message):
     return message['content'].get('name') == 'stdout'
 
+
+def is_execute_input(message):
+    return message['msg_type'] == 'execute_input'
+
+
 # --------------
 # Code Execution
 # --------------
@@ -304,25 +338,19 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
     Returns
     -------
     outputs : List
+
+    Notes
+    -----
+    See https://github.com/jupyter/nbconvert/blob/master/nbconvert
+      /preprocessors/execute.py
     '''
     msg_id = kp.kc.execute(code)
     while True:
         try:
             msg = kp.kc.shell_channel.get_msg(timeout=timeout)
         except Empty:
+            # TODO: Log error
             pass
-            # self.log.error(
-            #     "Timeout waiting for execute reply (%is)." % self.timeout)
-            # if self.interrupt_on_timeout:
-            #     self.log.error("Interrupting kernel")
-            #     self.km.interrupt_kernel()
-            # else:
-            #     try:
-            #         exception = TimeoutError
-            #     except NameError:
-            #         exception = RuntimeError
-            #     raise exception(
-            #         "Cell execution timed out, see log for details.")
 
         if msg['parent_header'].get('msg_id') == msg_id:
             break
@@ -342,15 +370,12 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
             msg = kp.kc.iopub_channel.get_msg(timeout=4)
         except Empty:
             pass
-            # self.log.warn("Timeout waiting for IOPub output")
-            # if self.raise_on_iopub_timeout:
-            #    # raise RuntimeError("Timeout waiting for IOPub output")
+            # TODO: Log error
         if msg['parent_header'].get('msg_id') != msg_id:
             # not an output from our execution
             continue
 
         msg_type = msg['msg_type']
-        # self.log.debug("output: %s", msg_type)
         content = msg['content']
 
         if msg_type == 'status':
@@ -358,20 +383,15 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
                 break
             else:
                 continue
-        elif msg_type == 'execute_input':
-            continue
+        elif msg_type in ('execute_input', 'execute_result'):
+            # Keep `execute_input` just for execution_count if theres
+            # no result
+            messages.append(msg)
         elif msg_type == 'clear_output':
             messages = []
             continue
         elif msg_type.startswith('comm'):
             continue
-
-        try:
-            messages.append(msg)
-        except ValueError:
-            pass
-            # self.log.error("unhandled iopub msg: " + msg_type)
-
     return messages
 
 

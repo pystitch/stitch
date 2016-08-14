@@ -1,5 +1,7 @@
 import os
 import json
+from textwrap import dedent
+
 import pytest
 import pypandoc
 
@@ -40,22 +42,6 @@ def code_block(request):
                    code]}
     return block
 
-@pytest.mark.parametrize('block, lang, attrs, expected', [
-    ({'t': 'CodeBlock',
-      'c': [['', ['{python}'], []],
-            'def f(x):\n    return x * 2\n\nf(2)']}, 'python', {}, True),
-
-    ({'c': [{'c': 'With', 't': 'Str'},
-     {'c': [], 't': 'Space'},
-     {'c': 'options', 't': 'Str'}], 't': 'Para'}, '', {}, False),
-
-    ({'t': 'CodeBlock',
-      'c': [['', ['{r}'], []],
-            '2+2']}, 'r', {'eval': False}, False),
-])
-def test_is_executable(block, lang, attrs, expected):
-    result = R.is_executable(block, lang, attrs)
-    assert result is expected
 
 def test_extract_kernel_name(code_block):
     result = R.extract_kernel_name(code_block)
@@ -74,20 +60,6 @@ def test_extract_kernel_name(code_block):
 ])
 def test_parse_kernel_arguments(code_block, expected):
     result = R.parse_kernel_arguments(code_block)
-    assert result == expected
-
-
-@pytest.mark.parametrize('output, message, expected', [
-    ([{'text/plain': '2'}],
-     {'content': {'execution_count': '1'}},
-     {'t': 'Div', 'c': (['', ['output'], []],
-                        [{'t': 'Para',
-                          'c': [{'t': 'Str',
-                                 'c': 'Out[1]: 2'}]}])}),
-])
-@pytest.mark.xfail
-def test_wrap_output(output, message, expected):
-    result = R.wrap_output(output, message)
     assert result == expected
 
 
@@ -115,6 +87,23 @@ class TestTesters:
         result = R.is_stitchable(output, attrs)
         assert result == expected
 
+    @pytest.mark.parametrize('block, lang, attrs, expected', [
+        ({'t': 'CodeBlock',
+          'c': [['', ['{python}'], []],
+                'def f(x):\n    return x * 2\n\nf(2)']}, 'python', {}, True),
+
+        ({'c': [{'c': 'With', 't': 'Str'},
+         {'c': [], 't': 'Space'},
+         {'c': 'options', 't': 'Str'}], 't': 'Para'}, '', {}, False),
+
+        ({'t': 'CodeBlock',
+          'c': [['', ['{r}'], []],
+                '2+2']}, 'r', {'eval': False}, False),
+    ])
+    def test_is_executable(self, block, lang, attrs, expected):
+        result = R.is_executable(block, lang, attrs)
+        assert result is expected
+
 
 class TestKernelArgs:
 
@@ -125,6 +114,61 @@ class TestKernelArgs:
     ])
     def test_extract_kernel_name(self, block, expected):
         result = R.extract_kernel_name(block)
+        assert result == expected
+
+
+class TestFormatters:
+
+    def test_format_input(self):
+        code = '2 + 2'
+        expected = 'In [1]: 2 + 2'
+        result = R.format_input_prompt(code, 1)
+        assert result == expected
+
+    def test_format_input_multi(self):
+        code = dedent('''\
+        def f(x):
+            return x + 2
+
+        f(2)
+        ''').strip()
+        expected = dedent('''\
+        In [10]: def f(x):
+            ...:     return x + 2
+            ...:
+            ...: f(2)
+        ''').strip()
+        result = R.format_input_prompt(code, 10)
+        assert result == expected
+
+    @pytest.mark.parametrize('messages,expected', [
+        ([{'content': {'data': {},
+                       'execution_count': 4},
+           'header': {'msg_type': 'execute_result'}}],
+         4),
+
+        ([{'content': {'execution_count': 2},
+           'header': {'msg_type': 'execute_input'}}],
+         2),
+
+        ([{'content': {'data': {'text/plain': 'foo'}}},
+          {'content': {'execution_count': 2}}],
+         2),
+    ])
+    def test_extract_execution_count(self, messages, expected):
+        assert R.extract_execution_count(messages) == expected
+
+    @pytest.mark.parametrize('output, message, expected', [
+        ([{'text/plain': '2'}],
+         {'content': {'execution_count': '1'}},
+         {'t': 'Div', 'c': (['', ['output'], []],
+                            [{'t': 'Para',
+                              'c': [{'t': 'Str',
+                                     'c': 'Out[1]: 2'}]}])}),
+    ])
+    @pytest.mark.xfail
+    def test_wrap_output(self, output, message, expected):
+        result = R.wrap_output(output, message)
         assert result == expected
 
 
