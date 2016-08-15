@@ -7,6 +7,7 @@ in the output.
 # Copyright (c) IPython Development Team.
 # Distributed under the terms of the Modified BSD License.
 import os
+import re
 import copy
 import json
 from typing import List, Optional, Iterable
@@ -26,6 +27,7 @@ HERE = os.path.dirname(__file__)
 CSS = os.path.join(HERE, 'static', 'default.css')
 
 KernelPair = namedtuple("KernelPair", "km kc")
+CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}')
 
 
 # --------
@@ -90,6 +92,7 @@ def stitch(source: str) -> str:
     """
     Execute code blocks, stitching the outputs back into a file.
     """
+    source = preprocess(source)
     meta, blocks = tokenize(source)
     kernels = {}
 
@@ -200,6 +203,62 @@ def tokenize(source: str) -> dict:
     Convert a document to pandoc's JSON AST.
     """
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
+
+
+def _transform(kind, text):
+    if kind == 'ARG':
+        result = '.' + text
+    elif kind in ('DELIM' 'BLANK'):
+        result = None
+    elif kind in ('OPEN', 'CLOSE', 'KWARG'):
+        return text
+    else:
+        raise TypeError('Unknown kind %s' % kind)
+    return result
+
+
+def is_code_chunk_line(line):
+    return CODE_CHUNK_XPR.match(line)
+
+
+def validate_options(options_line):
+    xpr = re.compile(r'^```{\w+.*}')
+    if not xpr.match(options_line):
+        raise TypeError("Invalid chunk options %s" % options_line)
+
+
+def preprocess(source):
+    doc = []
+    for line in source.split('\n'):
+        if CODE_CHUNK_XPR.match(line):
+            doc.append(preprocess_options(line))
+        else:
+            doc.append(line)
+    return '\n'.join(doc)
+
+
+def preprocess_options(options_line):
+    # See Python Cookbook 3rd Ed p 67
+    KWARG = r'(?P<KWARG>\w+ *= *\w+)'
+    ARG = r'(?P<ARG>\w+)'
+    DELIM = r'(?P<DELIM> *, *)'
+    BLANK = r'(?P<BLANK>\s+)'
+    OPEN = r'(?P<OPEN>```{ *)'
+    CLOSE = r'(?P<CLOSE>})'
+
+    Token = namedtuple("Token", ['kind', 'value'])
+    master_pat = re.compile('|'.join([KWARG, ARG, DELIM, OPEN, CLOSE, BLANK]))
+
+    def generate_tokens(pat, text):
+        scanner = pat.scanner(text)
+        for m in iter(scanner.match, None):
+            yield Token(m.lastgroup, m.group())
+
+    items = (_transform(kind, text) for kind, text in generate_tokens(master_pat, options_line))
+    items = filter(None, items)
+    items = ' '.join(items)
+    result = items.replace('{ ', '{').replace(' }', '}')
+    return result
 
 
 def parse_kernel_arguments(block):
@@ -368,6 +427,7 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
             # So long as the kernel sends a status:idle message when it
             # finishes, we won't actually have to wait this long, anyway.
             msg = kp.kc.iopub_channel.get_msg(timeout=4)
+            print(msg)
         except Empty:
             pass
             # TODO: Log error
@@ -383,8 +443,9 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
                 break
             else:
                 continue
-        elif msg_type in ('execute_input', 'execute_result', 'display_data'):
-            # Keep `execute_input` just for execution_count if theres
+        elif msg_type in ('execute_input', 'execute_result', 'display_data',
+                          'stream'):
+            # Keep `execute_input` just for execution_count if there's
             # no result
             messages.append(msg)
         elif msg_type == 'clear_output':
