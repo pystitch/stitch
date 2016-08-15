@@ -227,7 +227,30 @@ def validate_options(options_line):
         raise TypeError("Invalid chunk options %s" % options_line)
 
 
-def preprocess(source):
+def preprocess(source: str) -> str:
+    """
+    Process a source file prior to tokenezation.
+
+    Parameters
+    ----------
+    source : str
+
+    Returns
+    -------
+    processed : str
+
+    Notes
+    -----
+    Currently applies the following transformations
+
+    - preprocess_options: transform code chunk arguments
+    to allow ``{python, arg, kwarg=val}`` instead of pandoc-style
+    ``{.python .arg kwarg=val}``
+
+    See Also
+    --------
+    prerpocess_options
+    """
     doc = []
     for line in source.split('\n'):
         if CODE_CHUNK_XPR.match(line):
@@ -238,6 +261,11 @@ def preprocess(source):
 
 
 def preprocess_options(options_line):
+    """
+    Transform a code-chunk options line to allow
+    ``{python, arg, kwarg=val}`` instead of pandoc-style
+    ``{.python .arg kwarg=val}``
+    """
     # See Python Cookbook 3rd Ed p 67
     KWARG = r'(?P<KWARG>\w+ *= *\w+)'
     ARG = r'(?P<ARG>\w+)'
