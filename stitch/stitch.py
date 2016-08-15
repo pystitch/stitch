@@ -427,7 +427,6 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
             # So long as the kernel sends a status:idle message when it
             # finishes, we won't actually have to wait this long, anyway.
             msg = kp.kc.iopub_channel.get_msg(timeout=4)
-            print(msg)
         except Empty:
             pass
             # TODO: Log error
