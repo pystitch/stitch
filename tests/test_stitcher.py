@@ -43,14 +43,20 @@ def code_block(request):
     return block
 
 
+@pytest.fixture
+def python_kp():
+    return R.kernel_factory('python')
+
+
 class TestPreProcessor:
 
     @pytest.mark.parametrize('options, expected', [
+        ('```{python}', '```{.python}'),
         ('```{r, name}', '```{.r .name}'),
         ('```{r, echo=True}', '```{.r echo=True}'),
         ('```{r, name, echo=True, eval=False}', '```{.r .name echo=True eval=False}'),
     ])
-    def test_no_braces(self, options, expected):
+    def test_preprocess(self, options, expected):
         R.validate_options(options)
         result = R.preprocess_options(options)
         assert result == expected
@@ -219,4 +225,16 @@ class TestIntegration:
     def test_from_source(self, document):
         R.convert(document, 'html')
 
-    # TODO: display data tests
+    def test_image(self, python_kp):
+        code = dedent('''\
+        # Testing
+
+        ```{python}
+        %matplotlib inline
+        import matplotlib.pyplot as plt
+        plt.plot(range(4), range(4))
+        ```
+        ''')
+        result = R.stitch(code)
+        assert "data:image/png;base64," in result
+
