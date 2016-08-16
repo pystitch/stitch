@@ -40,7 +40,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests']),
 
     install_requires=['jupyter_core', 'traitlets', 'ipython', 'jupyter_client',
-                      'nbconvert', 'pandocfilters', 'pypandoc'],
+                      'nbconvert', 'pandocfilters', 'pypandoc', 'click'],
 
     extras_require={
         'dev': ['pytest', 'pytest-cov', 'sphinx'],
@@ -50,7 +50,7 @@ setup(
     # },
     entry_points={
         'console_scripts': [
-            'stitch=stitch.stitch_app:main',
+            'stitch=stitch.cli:cli',
         ],
     },
 )
