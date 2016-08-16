@@ -7,6 +7,7 @@ author: test author
 
 ```{python}
 def f(x):
+    print('x is equal to %s' % x)
     return x * 2
 
 f(2)
@@ -28,6 +29,10 @@ def f(x):
     return x ** 2
 
 f(2)
+```
+
+```{python}
+raise TypeError('foo')
 ```
 
 ## Plotting

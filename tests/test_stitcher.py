@@ -71,6 +71,21 @@ class TestPreProcessor:
         with pytest.raises(TypeError):
             R.validate_options(options)
 
+    @pytest.mark.parametrize('kind,text,expected', [
+        ("ARG", "r", ".r"),
+        ("DELIM", ",", None),
+        ("BLANK", " ", None),
+        ("OPEN", "```{", "```{"),
+        ("CLOSE", "}", "}"),
+        ("KWARG", "foo=bar", "foo=bar"),
+    ])
+    def test_transfrom_args(self, kind, text, expected):
+        result = R._transform(kind, text)
+        assert result == expected
+
+    def test_transform_raises(self):
+        with pytest.raises(TypeError):
+            R._transform('fake', 'foo')
 
 class TestTesters:
 
@@ -156,6 +171,12 @@ class TestKernelArgs:
         result = R.parse_kernel_arguments(code_block)
         assert result == expected
 
+    def test_parse_kernel_arguments_raises(self):
+        block = {'c': [['', ['r', 'foo', 'bar'], []], '3'],
+                 't': 'CodeBlock'}
+        with pytest.raises(TypeError):
+            R.parse_kernel_arguments(block)
+ 
 
 class TestFormatters:
 

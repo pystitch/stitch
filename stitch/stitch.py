@@ -217,10 +217,6 @@ def _transform(kind, text):
     return result
 
 
-def is_code_chunk_line(line):
-    return CODE_CHUNK_XPR.match(line)
-
-
 def validate_options(options_line):
     xpr = re.compile(r'^```{\w+.*}')
     if not xpr.match(options_line):
