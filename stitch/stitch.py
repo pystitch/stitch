@@ -114,6 +114,9 @@ def stitch(source: str) -> str:
                 kernel = kernels.setdefault(lang, kernel_factory(lang))
             messages = execute_block(block, kernel)
             execution_count = extract_execution_count(messages)
+        else:
+            execution_count = None
+            messages = []
 
         # ... now handle input formatting...
         if attrs.get('echo', True):
