@@ -16,7 +16,7 @@ from queue import Empty
 
 from jupyter_client.manager import start_new_kernel
 from nbconvert.utils.base import NbConvertBase
-from pandocfilters import Para, Str, RawBlock, Div
+from pandocfilters import RawBlock, Div, CodeBlock
 import pypandoc
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
@@ -337,7 +337,7 @@ def extract_kernel_name(block):
 # -----------------
 
 def plain_output(text):
-    block = Div(['', ['output'], []], [Para([Str(text)])])
+    block = Div(['', ['output'], []], [CodeBlock(['', [], []], text)])
     return block
 
 
