@@ -162,6 +162,11 @@ div .prompt {display:none}
     padding-right: 10px;
 }
 
+.output {
+    font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+
 ol, ul { max-width: 85% }
 li { color: #111; background-color: #fffff8; max-width: 85% }
 
