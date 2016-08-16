@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
 from os import path
 
+import versioneer
+
+
 here = path.abspath(path.dirname(__file__))
 
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -8,10 +11,10 @@ here = path.abspath(path.dirname(__file__))
 
 setup(
     name='stitch',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
 
-    version='0.1.0',
-
-    description='stitch',
+    description='Reproducible report generation tool.',
     # long_description=long_description,
 
     url='https://github.com/tomaugspurger/stitch',
