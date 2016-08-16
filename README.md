@@ -4,7 +4,7 @@
 
 An experimental knitr-like library, in Python.
 
-You should use [knitpy](https://github.com/janschulz/knitpy/) instead.
+*Note:* You should use [knitpy](https://github.com/janschulz/knitpy/) instead.
 This is an unfinished, worse version of it.
 However, I wanted to see if there was a simpler way of doing things.
 
@@ -38,23 +38,30 @@ happens to produce a bad document.
 
 # An Example
 
-Code chunks are specified using backticks
+The following code:
 
-```{.python}
-%matplotlib inline
-import pandas as pd
-import seaborn as sns
-df = sns.load_dataset("iris")
-```
+    Code chunks are specified using backticks
 
-A kernel maintains the state between code-chunks.
-Graphics are included.
-We can take an example from [seaborn](https://stanford.edu/~mwaskom/software/seaborn/examples/scatterplot_matrix.html):
+    ```{.python}
+    %matplotlib inline
+    import pandas as pd
+    import seaborn as sns
+    df = sns.load_dataset("iris")
+    ```
 
-```{.python}
-sns.set()
-sns.pairplot(df, hue="species");
-```
+    A kernel maintains the state between code-chunks.
+    Graphics are included.
+    We can take an example from [seaborn](https://stanford.edu/~mwaskom/software/seaborn/examples/scatterplot_matrix.html):
+
+    ```{.python}
+    sns.set()
+    sns.pairplot(df, hue="species");
+    ```
+
+
+Becomes:
 
 ![Side-by-side](comparison.png)
 
+
+For a more complex example see [this source](examples/timeseries.md) and [the rendered version](http://tomaugspurger.github.io/pages/timeseries.html)
