@@ -176,7 +176,7 @@ class TestKernelArgs:
                  't': 'CodeBlock'}
         with pytest.raises(TypeError):
             R.parse_kernel_arguments(block)
- 
+
 
 class TestFormatters:
 
