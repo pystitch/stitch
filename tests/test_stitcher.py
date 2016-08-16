@@ -29,10 +29,6 @@ def clean_python_kernel(global_python_kernel):
     return global_python_kernel
 
 
-def test_foo(clean_kernel):
-    R.run_code("x = 2", clean_kernel)
-
-
 @pytest.fixture
 def document_path():
     "Path to a markdown document"
