@@ -71,41 +71,6 @@ class TestPreProcessor:
         with pytest.raises(TypeError):
             R.validate_options(options)
 
-    @pytest.mark.parametrize('block, lang, attrs, expected', [
-        ({'t': 'CodeBlock',
-          'c': [['', ['{python}'], []],
-                'def f(x):\n    return x * 2\n\nf(2)']}, 'python', {}, True),
-
-        ({'c': [{'c': 'With', 't': 'Str'},
-         {'c': [], 't': 'Space'},
-         {'c': 'options', 't': 'Str'}], 't': 'Para'}, '', {}, False),
-
-        ({'t': 'CodeBlock',
-          'c': [['', ['{r}'], []],
-                '2+2']}, 'r', {'eval': False}, False),
-    ])
-    def test_is_executable(self, block, lang, attrs, expected):
-        result = R.is_executable(block, lang, attrs)
-        assert result is expected
-
-    def test_extract_kernel_name(self, code_block):
-        result = R.extract_kernel_name(code_block)
-        assert result in ('R', 'python')
-
-    @pytest.mark.parametrize('code_block, expected', [
-        ({'c': [['', ['python'], []], '3'], 't': 'CodeBlock'},
-         (('python', None), {})),
-        ({'c': [['', ['python', 'name'], []], '3'], 't': 'CodeBlock'},
-         (('python', 'name'), {})),
-        ({'c': [['', ['r', 'n'], [['foo', 'bar']]], '3'], 't': 'CodeBlock'},
-         (('r', 'n'), {'foo': 'bar'})),
-        ({'c': [['', [], [['foo', 'bar']]], '4'], 't': 'CodeBlock'},
-         ((None, None), {'foo': 'bar'})),
-    ])
-    def test_parse_kernel_arguments(self, code_block, expected):
-        result = R.parse_kernel_arguments(code_block)
-        assert result == expected
-
 
 class TestTesters:
 
@@ -158,6 +123,37 @@ class TestKernelArgs:
     ])
     def test_extract_kernel_name(self, block, expected):
         result = R.extract_kernel_name(block)
+        assert result == expected
+
+    @pytest.mark.parametrize('block, lang, attrs, expected', [
+        ({'t': 'CodeBlock',
+          'c': [['', ['{python}'], []],
+                'def f(x):\n    return x * 2\n\nf(2)']}, 'python', {}, True),
+
+        ({'c': [{'c': 'With', 't': 'Str'},
+         {'c': [], 't': 'Space'},
+         {'c': 'options', 't': 'Str'}], 't': 'Para'}, '', {}, False),
+
+        ({'t': 'CodeBlock',
+          'c': [['', ['{r}'], []],
+                '2+2']}, 'r', {'eval': False}, False),
+    ])
+    def test_is_executable(self, block, lang, attrs, expected):
+        result = R.is_executable(block, lang, attrs)
+        assert result is expected
+
+    @pytest.mark.parametrize('code_block, expected', [
+        ({'c': [['', ['python'], []], '3'], 't': 'CodeBlock'},
+         (('python', None), {})),
+        ({'c': [['', ['python', 'name'], []], '3'], 't': 'CodeBlock'},
+         (('python', 'name'), {})),
+        ({'c': [['', ['r', 'n'], [['foo', 'bar']]], '3'], 't': 'CodeBlock'},
+         (('r', 'n'), {'foo': 'bar'})),
+        ({'c': [['', [], [['foo', 'bar']]], '4'], 't': 'CodeBlock'},
+         ((None, None), {'foo': 'bar'})),
+    ])
+    def test_parse_kernel_arguments(self, code_block, expected):
+        result = R.parse_kernel_arguments(code_block)
         assert result == expected
 
 
