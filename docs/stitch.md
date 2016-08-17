@@ -10,7 +10,20 @@ You should consider using [knitpy](https://github.com/janschulz/knitpy/) instead
 While `stitch` is written in python, in principle it can be used for any
 of the dozens of [Jupyter kernels](https://github.com/ipython/ipython/wiki/IPython-kernels-for-other-languages).
 
-## What's in a Name
+## Why Not Jupyter Notebooks?
+
+Use both! Notebooks are great for interactive computing, and you should
+use them whenever appropriate.
+You can do some great things with a notebook and `nbconvert`.
+
+That said, they're not my favorite environment for writing long-form text,
+with bits of code mixed in.
+I'd much rather be in my favorite text-editor.
+To over-simplify a bit, any document has a ratio of text : code.
+When that ratio skews towards the code end, I prefer the notebook.
+When it's skewed to the text end, I prefer a markdown file
+
+## What's in a Name?
 
 The name `stitch` has a couple meanings. Like R's `knit`, we are taking a source
 document, executing code chunks, and `knit`ing or `stitch`ing the output

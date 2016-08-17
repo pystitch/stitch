@@ -52,6 +52,31 @@ Now we see the output.
 
 ---
 
+## Exceptions
+
+By default, exceptions are displayed and the stitching continues
+
+```{python}
+raise ValueError("ValueError!")
+```
+
+---
+
+## Rich Display
+
+We reuse IPython's [rich display system](http://ipython.readthedocs.io/en/stable/config/integrating.html),
+so objects defining `_repr_html_`, `_repr_latex_`, etc. will have that
+represented in the output.
+Pandas DataFrames, for example, do so
+
+```{python}
+import pandas as pd
+import seaborn as sns
+df = sns.load_dataset("iris")
+df.head()
+```
+
+
 ## Graphics
 
 It's possible to capture rich output, like graphics
@@ -60,9 +85,7 @@ It's possible to capture rich output, like graphics
 ```{python}
 %matplotlib inline
 %config InlineBackend.figure_format = 'svg'
-import pandas as pd
-import seaborn as sns
-df = sns.load_dataset("iris")
+
 sns.set()
 sns.pairplot(df, hue="species");
 ```
