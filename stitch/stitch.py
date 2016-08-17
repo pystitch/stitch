@@ -63,6 +63,10 @@ def convert(source: str, to: str, extra_args: Iterable[str]=(),
     """
     Convert a source document to an output file.
     """
+    # TODO: Put all settings app configurable.
+    if extra_args == []:
+        extra_args = ['--standalone', '--css=%s' % CSS]
+
     newdoc = stitch(source)
     result = pypandoc.convert_text(newdoc, to, format='json',
                                    extra_args=extra_args,
@@ -96,9 +100,6 @@ def stitch(source: str) -> str:
     meta, blocks = tokenize(source)
     kernels = {}
 
-    for name, kernel in kernels.items():
-        initialize_graphics(name, kernel)
-
     new_blocks = []
     for block in blocks:
         if not is_code_block(block):
@@ -111,7 +112,9 @@ def stitch(source: str) -> str:
             # still need to check, since kernel_factory(lang) is executaed
             # even if the key is present, only want one kernel / lang
             if lang not in kernels:
-                kernel = kernels.setdefault(lang, kernel_factory(lang))
+                kernels.setdefault(lang, kernel_factory(lang))
+                kernel = kernels[lang]
+                initialize_kernel(lang, kernel)
             messages = execute_block(block, kernel)
             execution_count = extract_execution_count(messages)
         else:
@@ -472,7 +475,7 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
             else:
                 continue
         elif msg_type in ('execute_input', 'execute_result', 'display_data',
-                          'stream'):
+                          'stream', 'error'):
             # Keep `execute_input` just for execution_count if there's
             # no result
             messages.append(msg)
@@ -494,17 +497,16 @@ def extract_execution_count(
             return count
 
 
-def initialize_graphics(name, kp):
+def initialize_kernel(name, kp):
     # TODO: set_matplotlib_formats takes *args
     # TODO: do as needed? Push on user?
     # valid_formats = ["png", "jpg", "jpeg", "pdf", "svg"]
     if name == 'python':
         code = """\
         %matplotlib inline
-        from IPython.display import set_matplotlib_formats
+        %colors NoColor
         """
-        kp.kc.execute(code + 'set_matplotlib_formats("png")',
-                      store_history=False)
+        kp.kc.execute(code, store_history=False)
         # fmt_code = '\n'.join("set_matplotlib_formats('{}')".format(fmt)
         #                      for fmt in valid_formats)
         # code = dedent(code) + fmt_code
