@@ -171,6 +171,8 @@ def format_input_prompt(code, number):
     """
     Wrap the input code in IPython style ``In [X]:`` markers.
     """
+    if number is None:
+        return code
     start = 'In [{}]: '.format(number)
     split = code.split('\n')
 
