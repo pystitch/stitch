@@ -67,7 +67,7 @@ def convert(source: str, to: str, extra_args: Iterable[str]=(),
     if extra_args == []:
         extra_args = ['--standalone', '--css=%s' % CSS]
 
-    newdoc = stitch(source)
+    newdoc = stitch(source, to)
     result = pypandoc.convert_text(newdoc, to, format='json',
                                    extra_args=extra_args,
                                    outputfile=output_file)
@@ -92,7 +92,7 @@ def kernel_factory(kernel_name: str) -> KernelPair:
     return KernelPair(*start_new_kernel(kernel_name=kernel_name))
 
 
-def stitch(source: str) -> str:
+def stitch(source: str, to='html') -> str:
     """
     Execute code blocks, stitching the outputs back into a file.
     """
@@ -127,7 +127,7 @@ def stitch(source: str) -> str:
 
         # ... and output formatting
         if is_stitchable(messages, attrs):
-            result = wrap_output(messages, execution_count)
+            result = wrap_output(messages, execution_count, to)
             new_blocks.extend(result)
 
     doc = json.dumps([meta, new_blocks])
@@ -354,7 +354,7 @@ def pytb(text):
     pass
 
 
-def wrap_output(messages, execution_count):
+def wrap_output(messages, execution_count, to='html'):
     '''
     stdout is wrapped in a code block?
     other stuff is wrapped.
@@ -386,11 +386,18 @@ def wrap_output(messages, execution_count):
             key = min(all_data.keys(), key=lambda k: order[k])
             data = all_data[key]
 
+            if to in ('latex', 'pdf'):
+                if 'text/latex' in all_data.keys():
+                    key = 'text/latex'
+                    data = all_data[key]
+
             if key == 'text/plain':
                 # ident, classes, kvs
                 block = plain_output(data)
             elif key in ('text/html', 'image/svg+xml'):
                 block = RawBlock('html', data)
+            elif key == 'text/latex':
+                block = RawBlock('latex', data)
             elif key == 'image/png':
                 block = RawBlock(
                     'html', '<img src="data:image/png;base64,{}">'.format(data)

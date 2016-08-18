@@ -1,3 +1,7 @@
+---
+header-includes:
+    - \usepackage{booktabs}
+---
 # Usage
 
 This document will display some of `stitch`'s options.
@@ -71,6 +75,7 @@ Pandas DataFrames, for example, do so
 
 ```{python}
 import pandas as pd
+pd.options.display.latex.repr = True
 import seaborn as sns
 df = sns.load_dataset("iris")
 df.head()
