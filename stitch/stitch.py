@@ -10,14 +10,16 @@ import os
 import re
 import copy
 import json
+import base64
 from typing import List, Optional, Iterable
 from collections import namedtuple
 from queue import Empty
 
 from jupyter_client.manager import start_new_kernel
 from nbconvert.utils.base import NbConvertBase
-from pandocfilters import RawBlock, Div, CodeBlock
+from pandocfilters import RawBlock, Div, CodeBlock, Image, Str, Para
 import pypandoc
+
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
 CODE = 'code'
@@ -34,9 +36,163 @@ CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}')
 # User API
 # --------
 
+class Stitch:
+
+    def __init__(self, name, to='html', standalone=True):
+        self.name = name
+        self.to = to
+        self.standalone = standalone
+        self._kernel_pairs = {}
+
+        self.resource_dir = self.name_resource_dir(name)
+        os.makedirs(self.resource_dir, exist_ok=True)  # TODO: handle existing?
+
+    @staticmethod
+    def name_resource_dir(name):
+        return '{}_files'.format(name)
+
+    @property
+    def self_contained(self):
+        # return self.to not in ('pdf', 'docx')
+        return True
+
+    @property
+    def kernel_managers(self):
+        '''
+        dict of KernelManager, KernelClient pairs, keyed by
+        kernel name.
+        '''
+        return self._kernel_pairs
+
+    def get_kernel(self, kernel_name):
+        kp = self.kernel_managers.get(kernel_name)
+        if not kp:
+            kp = kernel_factory(kernel_name)
+            initialize_kernel(kernel_name, kp)
+            self.kernel_managers[kernel_name] = kp
+        return kp
+
+    def stitch(self, source):
+        source = preprocess(source)
+        meta, blocks = tokenize(source)
+        new_blocks = []
+
+        for i, block in enumerate(blocks):
+            if not is_code_block(block):
+                new_blocks.append(block)
+                continue
+            # We should only have code blocks now...
+            # Execute first, to get prompt numbers
+            (lang, name), attrs = parse_kernel_arguments(block)
+            if name is None:
+                name = "unnamed_chunk_{}".format(i)
+            if is_executable(block, lang, attrs):
+                # still need to check, since kernel_factory(lang) is executaed
+                # even if the key is present, only want one kernel / lang
+                kernel = self.get_kernel(lang)
+                messages = execute_block(block, kernel)
+                execution_count = extract_execution_count(messages)
+            else:
+                execution_count = None
+                messages = []
+
+            # ... now handle input formatting...
+            if attrs.get('echo', True):
+                new_blocks.append(wrap_input_code(block, execution_count))
+
+            # ... and output formatting
+            if is_stitchable(messages, attrs):
+                result = self.wrap_output(
+                    name, messages, execution_count, self.to,
+                )
+                new_blocks.extend(result)
+        return meta, new_blocks
+
+    def wrap_output(self, chunk_name, messages, execution_count, kp):
+        '''
+        stdout is wrapped in a code block?
+        other stuff is wrapped.
+
+        return a list of blocks
+        '''
+        # messsage_pairs can come from stdout or the io stream (maybe others?)
+        output_messages = [x for x in messages if not is_execute_input(x)]
+        std_out_messages = [x for x in output_messages if is_stdout(x)]
+        display_messages = [x for x in output_messages if not is_stdout(x)]
+
+        output_blocks = []
+
+        # Handle all stdout first...
+        for message in std_out_messages:
+            text = message['content']['text']
+            output_blocks.append(plain_output(text))
+
+        order = dict(
+            (x[1], x[0]) for x in enumerate(NbConvertBase().display_data_priority)
+        )
+
+        for message in display_messages:
+            if message['header']['msg_type'] == 'error':
+                block = plain_output('\n'.join(message['content']['traceback']))
+            else:
+                all_data = message['content']['data']
+                key = min(all_data.keys(), key=lambda k: order[k])
+                data = all_data[key]
+
+                if self.to in ('latex', 'pdf'):
+                    if 'text/latex' in all_data.keys():
+                        key = 'text/latex'
+                        data = all_data[key]
+
+                if key == 'text/plain':
+                    # ident, classes, kvs
+                    block = plain_output(data)
+                elif key == 'text/latex':
+                    block = RawBlock('latex', data)
+                elif key == 'text/html':
+                    block = RawBlock('html', data)
+                elif key.startswith('image'):
+                    block = self.wrap_image_output(chunk_name, data, key)
+
+            output_blocks.append(block)
+        return output_blocks
+
+    def wrap_image_output(self, chunk_name, data, key):
+        # TODO: interaction of output type and standalone.
+        # TODO: this can be simplified, do the file-writing in one step
+        def b64_encode(data):
+            return base64.encodestring(data.encode('ascii')).decode('ascii')
+
+        if self.self_contained:
+            if 'png' in key:
+                data = 'data:image/png;base64,{}'.format(data)
+            elif 'svg' in key:
+                data = 'data:image/svg+xml;base64,{}'.format(b64_encode(data))
+            if 'png' in key or 'svg' in key:
+                block = Para([Image([chunk_name, [], []],
+                                    [Str("")],
+                                    [data, ""])])
+            else:
+                raise TypeError("Unknown mimetype %s" % key)
+        else:
+            # we are saving to filesystem
+            filepath = os.path.join(self.resource_dir,
+                                    "{}.png".format(chunk_name))
+            with open(filepath, 'wb') as f:
+                f.write(base64.decodestring(data.encode('ascii')))
+            # Image :: alt text (list of inlines), target
+            # Image :: Attr [Inline] Target
+            # Target :: (string, string)  of (URL, title)
+            block = Para([Image([chunk_name, [], []],
+                                [Str("")],
+                                [filepath, "fig: {}".format(chunk_name)])])
+
+        return block
+
+
 def convert_file(input_file: str,
                  to: str,
-                 extra_args: Iterable[str]=None,
+                 extra_args: Iterable[str]=(),
                  output_file: Optional[str]=None) -> None:
     """
     Convert a markdown ``input_file`` to ``to``.
@@ -51,10 +207,6 @@ def convert_file(input_file: str,
     """
     with open(input_file) as f:
         source = f.read()
-    # TODO: Put all settings app configurable.
-    if extra_args is None:
-        extra_args = ['--standalone', '--css=%s' % CSS]
-
     convert(source, to, extra_args=extra_args, output_file=output_file)
 
 
@@ -64,15 +216,25 @@ def convert(source: str, to: str, extra_args: Iterable[str]=(),
     Convert a source document to an output file.
     """
     # TODO: Put all settings app configurable.
-    if extra_args == []:
-        extra_args = ['--standalone', '--css=%s' % CSS]
+    if to == 'html':
+        if extra_args == []:
+            extra_args = ['--standalone', '--css=%s' % CSS]
+    output_name = (
+        os.path.splitext(os.path.basename(output_file))[0]
+        if output_file is not None
+        else 'std_out'
+    )
 
-    newdoc = stitch(source, to)
-    result = pypandoc.convert_text(newdoc, to, format='json',
+    standalone = '--standalone' in extra_args
+    stitcher = Stitch(name=output_name, to=to, standalone=standalone)
+    meta, blocks = stitcher.stitch(source)
+    result = json.dumps([meta, blocks])
+    newdoc = pypandoc.convert_text(result, to, format='json',
                                    extra_args=extra_args,
                                    outputfile=output_file)
+
     if output_file is None:
-        print(result)
+        print(newdoc)
 
 
 def kernel_factory(kernel_name: str) -> KernelPair:
@@ -92,54 +254,13 @@ def kernel_factory(kernel_name: str) -> KernelPair:
     return KernelPair(*start_new_kernel(kernel_name=kernel_name))
 
 
-def stitch(source: str, to='html') -> str:
-    """
-    Execute code blocks, stitching the outputs back into a file.
-    """
-    source = preprocess(source)
-    meta, blocks = tokenize(source)
-    kernels = {}
-
-    new_blocks = []
-    for block in blocks:
-        if not is_code_block(block):
-            new_blocks.append(block)
-            continue
-        # We should only have code blocks now...
-        # Execute first, to get prompt numbers
-        (lang, name), attrs = parse_kernel_arguments(block)
-        if is_executable(block, lang, attrs):
-            # still need to check, since kernel_factory(lang) is executaed
-            # even if the key is present, only want one kernel / lang
-            if lang not in kernels:
-                kernels.setdefault(lang, kernel_factory(lang))
-                kernel = kernels[lang]
-                initialize_kernel(lang, kernel)
-            messages = execute_block(block, kernel)
-            execution_count = extract_execution_count(messages)
-        else:
-            execution_count = None
-            messages = []
-
-        # ... now handle input formatting...
-        if attrs.get('echo', True):
-            new_blocks.append(wrap_input_code(block, execution_count))
-
-        # ... and output formatting
-        if is_stitchable(messages, attrs):
-            result = wrap_output(messages, execution_count, to)
-            new_blocks.extend(result)
-
-    doc = json.dumps([meta, new_blocks])
-    return doc
-
 # -----------
 # Input Tests
 # -----------
 
 def is_code_block(block):
     is_code = block['t'] == CODEBLOCK
-    return is_code  # TODO: echo
+    return is_code
 
 
 def is_executable(block, lang, attrs):
@@ -213,18 +334,6 @@ def tokenize(source: str) -> dict:
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
 
 
-def _transform(kind, text):
-    if kind == 'ARG':
-        result = '.' + text
-    elif kind in ('DELIM' 'BLANK'):
-        result = None
-    elif kind in ('OPEN', 'CLOSE', 'KWARG'):
-        return text
-    else:
-        raise TypeError('Unknown kind %s' % kind)
-    return result
-
-
 def validate_options(options_line):
     xpr = re.compile(r'^```{\w+.*}')
     if not xpr.match(options_line):
@@ -264,6 +373,18 @@ def preprocess(source: str) -> str:
     return '\n'.join(doc)
 
 
+def _transform(kind, text):
+    if kind == 'ARG':
+        result = '.' + text
+    elif kind in ('DELIM' 'BLANK'):
+        result = None
+    elif kind in ('OPEN', 'CLOSE', 'KWARG'):
+        return text
+    else:
+        raise TypeError('Unknown kind %s' % kind)
+    return result
+
+
 def preprocess_options(options_line):
     """
     Transform a code-chunk options line to allow
@@ -286,7 +407,8 @@ def preprocess_options(options_line):
         for m in iter(scanner.match, None):
             yield Token(m.lastgroup, m.group())
 
-    items = (_transform(kind, text) for kind, text in generate_tokens(master_pat, options_line))
+    items = (_transform(kind, text)
+             for kind, text in generate_tokens(master_pat, options_line))
     items = filter(None, items)
     items = ' '.join(items)
     result = items.replace('{ ', '{').replace(' }', '}')
@@ -347,63 +469,6 @@ def extract_kernel_name(block):
 def plain_output(text):
     block = Div(['', ['output'], []], [CodeBlock(['', [], []], text)])
     return block
-
-
-def pytb(text):
-    # TODO
-    pass
-
-
-def wrap_output(messages, execution_count, to='html'):
-    '''
-    stdout is wrapped in a code block?
-    other stuff is wrapped.
-
-    return a list of blocks
-    '''
-    # messsage_pairs can come from stdout or the io stream (maybe others?)
-    output_messages = [x for x in messages if not is_execute_input(x)]
-    std_out_messages = [x for x in output_messages if is_stdout(x)]
-    display_messages = [x for x in output_messages if not is_stdout(x)]
-
-    output_blocks = []
-
-    # Handle all stdout first...
-    for message in std_out_messages:
-        text = message['content']['text']
-        output_blocks.append(plain_output(text))
-
-    order = dict(
-        (x[1], x[0]) for x in enumerate(NbConvertBase().display_data_priority)
-    )
-
-    for message in display_messages:
-        if message['header']['msg_type'] == 'error':
-            block = plain_output('\n'.join(message['content']['traceback']))
-        else:
-            # TODO: traceback
-            all_data = message['content']['data']
-            key = min(all_data.keys(), key=lambda k: order[k])
-            data = all_data[key]
-
-            if to in ('latex', 'pdf'):
-                if 'text/latex' in all_data.keys():
-                    key = 'text/latex'
-                    data = all_data[key]
-
-            if key == 'text/plain':
-                # ident, classes, kvs
-                block = plain_output(data)
-            elif key in ('text/html', 'image/svg+xml'):
-                block = RawBlock('html', data)
-            elif key == 'text/latex':
-                block = RawBlock('latex', data)
-            elif key == 'image/png':
-                block = RawBlock(
-                    'html', '<img src="data:image/png;base64,{}">'.format(data)
-                )
-        output_blocks.append(block)
-    return output_blocks
 
 
 def is_stdout(message):

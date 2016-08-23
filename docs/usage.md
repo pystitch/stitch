@@ -89,7 +89,7 @@ It's possible to capture rich output, like graphics
 
 ```{python}
 %matplotlib inline
-%config InlineBackend.figure_format = 'svg'
+# %config InlineBackend.figure_format = 'svg'
 
 sns.set()
 sns.pairplot(df, hue="species");

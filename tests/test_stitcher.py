@@ -260,16 +260,29 @@ class TestIntegration:
     def test_from_source(self, document):
         R.convert(document, 'html')
 
-    def test_image(self, python_kp):
+    @pytest.mark.parametrize("to, value", [
+        ("html", "data:image/png;base64,"),
+        ("pdf", 'unnamed_chunk_0'),  # TODO: chunk name
+    ])
+    def test_image(self, to, value, global_python_kernel):
         code = dedent('''\
-        # Testing
-
         ```{python}
         %matplotlib inline
         import matplotlib.pyplot as plt
-        plt.plot(range(4), range(4))
+        plt.plot(range(4), range(4));
         ```
         ''')
-        result = R.stitch(code)
-        assert "data:image/png;base64," in result
+        result = R.Stitch('foo', to=to).stitch(code)
+        assert result[1][1]['c'][0]['t'] == 'Image'
+
+    def test_image_chunkname(self):
+        code = dedent('''\
+        ```{python, chunk}
+        %matplotlib inline
+        import matplotlib.pyplot as plt
+        plt.plot(range(4), range(4));
+        ```
+        ''')
+        result = R.Stitch('foo', to='pdf', standalone=False).stitch(code)
+        assert 'chunk' in result[1][1]['c'][0]['c'][0][0]
 
