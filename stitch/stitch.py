@@ -45,7 +45,6 @@ class Stitch:
         self._kernel_pairs = {}
 
         self.resource_dir = self.name_resource_dir(name)
-        os.makedirs(self.resource_dir, exist_ok=True)  # TODO: handle existing?
 
     @staticmethod
     def name_resource_dir(name):
