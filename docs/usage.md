@@ -89,11 +89,20 @@ It's possible to capture rich output, like graphics
 
 ```{python}
 %matplotlib inline
-# %config InlineBackend.figure_format = 'svg'
 
 sns.set()
 sns.pairplot(df, hue="species");
 ```
+
+You can control image attributes from the chunk options
+
+```{python, width=80, height=80px}
+%matplotlib inline
+
+sns.set()
+sns.pairplot(df, hue="species");
+```
+
 
 [^literal_code]: If you look at the markdown source for this document,
 you'll see that I've indented the code block by 4 spaces. This is so that

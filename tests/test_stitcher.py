@@ -286,3 +286,15 @@ class TestIntegration:
         result = R.Stitch('foo', to='pdf', standalone=False).stitch(code)
         assert 'chunk' in result[1][1]['c'][0]['c'][0][0]
 
+    def test_image_attrs(self):
+        code = dedent('''\
+        ```{python, chunk, width=10, height=10px}
+        %matplotlib inline
+        import matplotlib.pyplot as plt
+        plt.plot(range(4), range(4));
+        ```
+        ''')
+        result = R.Stitch('foo', to='html', standalone=False).stitch(code)
+        attrs = result[1][1]['c'][0]['c'][0][2]
+        assert ('width', '10') in attrs
+        assert ('height', '10px') in attrs

@@ -102,12 +102,12 @@ class Stitch:
             # ... and output formatting
             if is_stitchable(messages, attrs):
                 result = self.wrap_output(
-                    name, messages, execution_count, self.to,
+                    name, messages, execution_count, self.to, attrs,
                 )
                 new_blocks.extend(result)
         return meta, new_blocks
 
-    def wrap_output(self, chunk_name, messages, execution_count, kp):
+    def wrap_output(self, chunk_name, messages, execution_count, kp, attrs):
         '''
         stdout is wrapped in a code block?
         other stuff is wrapped.
@@ -151,24 +151,27 @@ class Stitch:
                 elif key == 'text/html':
                     block = RawBlock('html', data)
                 elif key.startswith('image'):
-                    block = self.wrap_image_output(chunk_name, data, key)
+                    block = self.wrap_image_output(chunk_name, data, key, attrs)
 
             output_blocks.append(block)
         return output_blocks
 
-    def wrap_image_output(self, chunk_name, data, key):
+    def wrap_image_output(self, chunk_name, data, key, attrs):
         # TODO: interaction of output type and standalone.
         # TODO: this can be simplified, do the file-writing in one step
         def b64_encode(data):
             return base64.encodestring(data.encode('ascii')).decode('ascii')
 
+        # TODO: dict of attrs on Stitcher.
+        image_attrs = {'width', 'height'}
+        attrs = [(k, v) for k, v in attrs.items() if k in image_attrs]
         if self.self_contained:
             if 'png' in key:
                 data = 'data:image/png;base64,{}'.format(data)
             elif 'svg' in key:
                 data = 'data:image/svg+xml;base64,{}'.format(b64_encode(data))
             if 'png' in key or 'svg' in key:
-                block = Para([Image([chunk_name, [], []],
+                block = Para([Image([chunk_name, [], attrs],
                                     [Str("")],
                                     [data, ""])])
             else:
