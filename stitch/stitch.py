@@ -117,12 +117,14 @@ class Stitch:
         # messsage_pairs can come from stdout or the io stream (maybe others?)
         output_messages = [x for x in messages if not is_execute_input(x)]
         std_out_messages = [x for x in output_messages if is_stdout(x)]
-        display_messages = [x for x in output_messages if not is_stdout(x)]
+        std_err_messages = [x for x in output_messages if is_stderr(x)]
+        display_messages = [x for x in output_messages if not is_stdout(x)
+                            and not is_stderr(x)]
 
         output_blocks = []
 
         # Handle all stdout first...
-        for message in std_out_messages:
+        for message in std_out_messages + std_err_messages:
             text = message['content']['text']
             output_blocks.append(plain_output(text))
 
@@ -134,7 +136,10 @@ class Stitch:
             if message['header']['msg_type'] == 'error':
                 block = plain_output('\n'.join(message['content']['traceback']))
             else:
-                all_data = message['content']['data']
+                try:
+                    all_data = message['content']['data']
+                except:
+                    import pdb; pdb.set_trace()
                 key = min(all_data.keys(), key=lambda k: order[k])
                 data = all_data[key]
 
@@ -484,6 +489,10 @@ def plain_output(text):
 
 def is_stdout(message):
     return message['content'].get('name') == 'stdout'
+
+
+def is_stderr(message):
+    return message['content'].get('name') == 'stderr'
 
 
 def is_execute_input(message):
