@@ -73,6 +73,7 @@ class TestPreProcessor:
         ('```{r, name}', '```{.r .name}'),
         ('```{r, echo=True}', '```{.r echo=True}'),
         ('```{r, name, echo=True, eval=False}', '```{.r .name echo=True eval=False}'),
+        ('```python', '```{.python}'),
     ])
     def test_preprocess(self, options, expected):
         R.validate_options(options)
@@ -81,7 +82,6 @@ class TestPreProcessor:
 
     @pytest.mark.parametrize('options', [
         # '```{r name foo=bar}''',  # bad comma
-        '```python',              # no curly
         # '```{r foo=bar}'''        # no comma
         '```{r, foo=bar'''        # no curly
     ])
