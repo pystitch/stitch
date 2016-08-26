@@ -109,3 +109,49 @@ you'll see that I've indented the code block by 4 spaces. This is so that
 the block is interpreted as a literal chunk of text, and isn't intercepted
 by the engine for execution. To actually run code the code chunk should be at
 the start of the line.
+
+## Command-line Interface
+
+The command-line interface is as similar to pandoc's as possible.
+The simplest example is just passing an input markdown file:
+
+    ```
+    stitch input.md
+    ```
+
+
+Other useful options are
+
+- `-o` or `--output_file`: the file to write the stitched output to; defaults to stdout.
+- `-t` or `--to`: the type to transform to. Defaults to `html` or it's inferred from the `--output_file` extension.
+
+The biggest difference right now is the treatment of stdin.
+With pandoc you can convert stdin with
+
+    ```
+    $ cat input.md | pandoc
+    ```
+
+With `stitch`, it's written as
+
+    ```
+    $ cat input.md | stitch -
+    ```
+
+So `-` is the marker for stdin.
+
+## Document Options
+
+You can provide document-wide options in a YAML metadata block at the
+start of the file.
+This looks like
+
+    ```
+    header-includes:
+        - \usepackage{booktabs}
+    ```
+
+
+See the [pandoc documentation](http://pandoc.org/MANUAL.html) about the `yaml_metadata_block` extension for all the options.
+In addition to Pandoc's options, `stitch` defines and intercepts the following
+variables

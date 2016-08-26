@@ -118,8 +118,8 @@ class Stitch:
         output_messages = [x for x in messages if not is_execute_input(x)]
         std_out_messages = [x for x in output_messages if is_stdout(x)]
         std_err_messages = [x for x in output_messages if is_stderr(x)]
-        display_messages = [x for x in output_messages if not is_stdout(x)
-                            and not is_stderr(x)]
+        display_messages = [x for x in output_messages if not is_stdout(x) and
+                            not is_stderr(x)]
 
         output_blocks = []
 
