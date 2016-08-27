@@ -298,3 +298,20 @@ class TestIntegration:
         attrs = result[1][1]['c'][0]['c'][0][2]
         assert ('width', '10') in attrs
         assert ('height', '10px') in attrs
+
+    @pytest.mark.parametrize('to', ['latex', 'beamer'])
+    def test_rich_output(self, to, clean_python_kernel):
+        code = dedent('''\
+        ```{python}
+        import pandas as pd
+        pd.options.display.latex.repr = True
+        pd.DataFrame({'a': [1, 2]})
+        ```
+        ''')
+        stitch = R.Stitch('foo', to, )
+        stitch._kernel_pairs['python'] = clean_python_kernel
+        meta, blocks = stitch.stitch(code)
+        result = blocks[1]['c'][1]
+        assert '\\begin{tabular}' in result
+
+

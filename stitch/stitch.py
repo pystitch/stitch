@@ -143,7 +143,7 @@ class Stitch:
                 key = min(all_data.keys(), key=lambda k: order[k])
                 data = all_data[key]
 
-                if self.to in ('latex', 'pdf'):
+                if self.to in ('latex', 'pdf', 'beamer'):
                     if 'text/latex' in all_data.keys():
                         key = 'text/latex'
                         data = all_data[key]
