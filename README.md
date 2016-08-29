@@ -38,30 +38,5 @@ happens to produce a bad document.
 
 # An Example
 
-The following code:
-
-    Code chunks are specified using backticks
-
-    ```{.python}
-    %matplotlib inline
-    import pandas as pd
-    import seaborn as sns
-    df = sns.load_dataset("iris")
-    ```
-
-    A kernel maintains the state between code-chunks.
-    Graphics are included.
-    We can take an example from [seaborn](https://stanford.edu/~mwaskom/software/seaborn/examples/scatterplot_matrix.html):
-
-    ```{.python}
-    sns.set()
-    sns.pairplot(df, hue="species");
-    ```
-
-
-Becomes:
-
-![Side-by-side](comparison.png)
-
-
-For a more complex example see [this source](examples/timeseries.md) and [the rendered version](http://tomaugspurger.github.io/pages/timeseries.html)
+See the project's [website](https://pystitch.github.io) for a side-by-side
+comparison of input markdown and stitched HTML.
