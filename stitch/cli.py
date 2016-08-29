@@ -17,6 +17,13 @@ def infer_format(output_file):
 def has_css(extra_args):
     return '-c' in extra_args or '--css' in [a.split('=')[0] for a in extra_args]
 
+
+def has_booktabs(extra_args):
+    return 'header-includes:\\usepackage{booktabs}' in [
+        '='.join(a.split('=')[1:])
+        for a in extra_args
+    ]
+
 def enhance_args(to, no_standalone, no_self_contained, extra_args):
     extra_args = extra_args.copy()
     if not no_standalone and not ('-s' in extra_args or
@@ -26,6 +33,8 @@ def enhance_args(to, no_standalone, no_self_contained, extra_args):
         extra_args.append('--self-contained')
     if to == 'html' and not has_css(extra_args):
         extra_args.append('--css=%s' % CSS)
+    if to in ('latex', 'pdf') and not has_booktabs(extra_args):
+        extra_args.append('--metadata=header-includes:\\usepackage{booktabs}')
     return extra_args
 
 

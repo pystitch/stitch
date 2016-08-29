@@ -590,8 +590,16 @@ def initialize_kernel(name, kp):
     # valid_formats = ["png", "jpg", "jpeg", "pdf", "svg"]
     if name == 'python':
         code = """\
-        %matplotlib inline
         %colors NoColor
+        try:
+            %matplotlib inline
+        except:
+            passs
+        try:
+            import pandas as pd
+            pd.options.display.latex.repr = True
+        except:
+            pass
         """
         kp.kc.execute(code, store_history=False)
         # fmt_code = '\n'.join("set_matplotlib_formats('{}')".format(fmt)
