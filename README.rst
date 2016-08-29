@@ -25,12 +25,12 @@ Fortunately the building blocks are all there.
 
 We reuse
 
--  ```pandoc`` <http://pandoc.org>`__ via
-   ```pypandoc`` <https://pypi.python.org/pypi/pypandoc>`__ for parsing
+-  `pandoc <http://pandoc.org>`__ via
+   `pypandoc <https://pypi.python.org/pypi/pypandoc>`__ for parsing
    markdown and rendering the final output
--  ```jupyter`` <http://jupyter.readthedocs.io/en/latest/>`__ for
+-  `jupyter <http://jupyter.readthedocs.io/en/latest/>`__ for
    language kernels, executing code, and collecting the output
--  Use ```pandocfilters`` <https://github.com/jgm/pandocfilters>`__ to
+-  Use `pandocfilters <https://github.com/jgm/pandocfilters>`__ to
    collate the execution output into the document
 
 So all ``stitch`` has to do is to provide a command-line interface, scan
