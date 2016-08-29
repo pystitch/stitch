@@ -43,7 +43,7 @@ setup(
                       'nbconvert', 'pandocfilters', 'pypandoc', 'click'],
 
     extras_require={
-        'dev': ['pytest', 'pytest-cov', 'sphinx'],
+        'dev': ['pytest', 'pytest-cov', 'sphinx', 'pandas', 'matplotlib'],
     },
     # package_data={
     #     'sample': ['package_data.dat'],
