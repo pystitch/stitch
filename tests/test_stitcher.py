@@ -6,6 +6,7 @@ import pytest
 import pypandoc
 
 import stitch.stitch as R
+from stitch.cli import enhance_args, CSS
 
 
 HERE = os.path.dirname(__file__)
@@ -315,3 +316,35 @@ class TestIntegration:
         assert '\\begin{tabular}' in result
 
 
+class TestCLI:
+
+    @pytest.mark.parametrize('expected, no_standalone, extra_args', [
+        (True, False, []),
+        (True, False, ['--standalone']),
+        (True, False, ['-s']),
+        (False, True, []),
+    ])
+    def test_standalone(self, expected, no_standalone, extra_args):
+        args = enhance_args('', no_standalone, False, extra_args)
+        result = '--standalone' in args or '-s' in args
+        assert result is expected
+
+    @pytest.mark.parametrize('expected, no_self_contained, extra_args', [
+        (True, False, []),
+        (True, False, ['--self-contained']),
+        (False, True, []),
+    ])
+    def test_self_contained(self, expected, no_self_contained, extra_args):
+        args = enhance_args('', False, no_self_contained, extra_args)
+        result = '--self-contained' in args
+        assert result is expected
+
+    @pytest.mark.parametrize('expected, to, extra_args', [
+        (['--css=%s' % CSS], 'html', []),
+        (['-s', '--css=%s' % CSS], 'html', ['-s']),
+        (['--css=foo.css'], 'html', ['--css=foo.css']),
+        (['-c', 'foo.css'], 'html', ['-c', 'foo.css']),
+    ])
+    def test_css(self, expected, to, extra_args):
+        result = enhance_args(to, True, True, extra_args)
+        assert result == expected

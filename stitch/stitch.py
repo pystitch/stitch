@@ -26,7 +26,6 @@ CODE = 'code'
 CODEBLOCK = 'CodeBlock'
 OUTPUT_FORMATS = ['html', 'latex']
 HERE = os.path.dirname(__file__)
-CSS = os.path.join(HERE, 'static', 'default.css')
 
 KernelPair = namedtuple("KernelPair", "km kc")
 CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
@@ -222,10 +221,6 @@ def convert(source: str, to: str, extra_args: Iterable[str]=(),
     """
     Convert a source document to an output file.
     """
-    # TODO: Put all settings app configurable.
-    if to == 'html':
-        if extra_args == []:
-            extra_args = ['--standalone', '--css=%s' % CSS]
     output_name = (
         os.path.splitext(os.path.basename(output_file))[0]
         if output_file is not None

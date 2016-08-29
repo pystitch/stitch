@@ -103,12 +103,21 @@ sns.set()
 sns.pairplot(df, hue="species");
 ```
 
+## Document Options
 
-[^literal_code]: If you look at the markdown source for this document,
-you'll see that I've indented the code block by 4 spaces. This is so that
-the block is interpreted as a literal chunk of text, and isn't intercepted
-by the engine for execution. To actually run code the code chunk should be at
-the start of the line.
+You can provide document-wide options in a YAML metadata block at the
+start of the file.
+This looks like
+
+    ```
+    header-includes:
+        - \usepackage{booktabs}
+    ```
+
+
+See the [pandoc documentation](http://pandoc.org/MANUAL.html) about the `yaml_metadata_block` extension for all the options.
+In addition to Pandoc's options, `stitch` defines and intercepts the following
+variables
 
 ## Command-line Interface
 
@@ -119,6 +128,7 @@ The simplest example is just passing an input markdown file:
     stitch input.md
     ```
 
+This will take the text in `input.md` execute it and convert it to HTML, printing the result to stdout.
 
 Other useful options are
 
@@ -138,20 +148,36 @@ With `stitch`, it's written as
     $ cat input.md | stitch -
     ```
 
-So `-` is the marker for stdin.
+So a `-` is the marker for stdin.
 
-## Document Options
+## Notes on Pandoc
 
-You can provide document-wide options in a YAML metadata block at the
-start of the file.
-This looks like
+If you aren't familiar, pandoc is a universal document converter written
+in Haskell.
 
-    ```
-    header-includes:
-        - \usepackage{booktabs}
-    ```
+For outputs like HTML and LaTeX, pandoc produces document fragments by default.
+This means the converted output doesn't include things like `<head>`
+tags, just the body.
+`stitch`, on the other hand, prefers standalone documents.
+
+The second difference is that stitch prefers self-contained documents.
+This means things like images are inlined as base64 encoded PNGs or SVGs.
+With pandoc, this options are enabled with the
+
+- `--standalone`
+- `--self-contained`
+
+options. With `stitch`, the defaults are flipped to True, and disabled with
+
+- `--no-standalone`
+- `--no-self-contained`
 
 
-See the [pandoc documentation](http://pandoc.org/MANUAL.html) about the `yaml_metadata_block` extension for all the options.
-In addition to Pandoc's options, `stitch` defines and intercepts the following
-variables
+
+
+[^literal_code]: If you look at the markdown source for this document,
+you'll see that I've indented the code block by 4 spaces. This is so that
+the block is interpreted as a literal chunk of text, and isn't intercepted
+by the engine for execution. To actually run code the code chunk should be at
+the start of the line.
+
