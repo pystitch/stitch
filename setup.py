@@ -10,7 +10,7 @@ here = path.abspath(path.dirname(__file__))
 #     long_description = f.read()
 
 setup(
-    name='stitch',
+    name='pystitch',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
 
