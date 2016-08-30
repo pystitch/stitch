@@ -594,7 +594,7 @@ def initialize_kernel(name, kp):
         try:
             %matplotlib inline
         except:
-            passs
+            pass
         try:
             import pandas as pd
             pd.options.display.latex.repr = True
