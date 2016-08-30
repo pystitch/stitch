@@ -106,6 +106,7 @@ class TestPreProcessor:
         with pytest.raises(TypeError):
             R._transform('fake', 'foo')
 
+
 class TestTesters:
 
     @pytest.mark.parametrize('block, expected', [
@@ -146,6 +147,32 @@ class TestTesters:
     def test_is_executable(self, block, lang, attrs, expected):
         result = R.is_executable(block, lang, attrs)
         assert result is expected
+
+    @pytest.mark.parametrize('message, expected', [
+        ({'content': {'name': 'stdout'}}, True),
+        ({'content': {'name': 'stderr'}}, False),
+        ({'content': {}}, False),
+    ])
+    def test_is_stdout(self, message, expected):
+        result = R.is_stdout(message)
+        assert result == expected
+
+    @pytest.mark.parametrize('message, expected', [
+        ({'content': {'name': 'stdout'}}, False),
+        ({'content': {'name': 'stderr'}}, True),
+        ({'content': {}}, False),
+    ])
+    def test_is_stderr(selr, message, expected):
+        result = R.is_stderr(message)
+        assert result == expected
+
+    @pytest.mark.parametrize('message, expected', [
+        ({'msg_type': 'execute_input'}, True),
+        ({'msg_type': 'idle'}, False),
+    ])
+    def test_is_execute_input(selr, message, expected):
+        result = R.is_execute_input(message)
+        assert result == expected
 
 
 class TestKernelArgs:
@@ -205,6 +232,11 @@ class TestFormatters:
         result = R.format_input_prompt(code, 1)
         assert result == expected
 
+    def test_format_input_none(self):
+        code = 'abcde'
+        result = R.format_input_prompt(code, None)
+        assert result == code
+
     def test_format_input_multi(self):
         code = dedent('''\
         def f(x):
@@ -220,6 +252,11 @@ class TestFormatters:
         ''').strip()
         result = R.format_input_prompt(code, 10)
         assert result == expected
+
+    def test_wrap_input__code(self):
+        block = {'t': 'code', 'c': ['a', ['b'], 'c']}
+        result = R.wrap_input_code(block, None)
+        assert block is not result
 
     @pytest.mark.parametrize('messages,expected', [
         ([{'content': {'data': {},
@@ -348,3 +385,22 @@ class TestCLI:
     def test_css(self, expected, to, extra_args):
         result = enhance_args(to, True, True, extra_args)
         assert result == expected
+
+
+@pytest.mark.slow
+class TestKernel:
+
+    def test_init_python_pre(self):
+        kp = R.kernel_factory('python')
+        result = R.run_code(
+            'import pandas; assert pandas.options.display.latex.repr is False',
+            kp)
+        assert len(result) == 1
+
+    def test_init_python_latex(self, clean_python_kernel):
+        R.initialize_kernel('python', clean_python_kernel)
+        result = R.run_code('assert pandas.options.display.latex.repr is False',
+                            clean_python_kernel)
+        assert len(result) == 2
+
+
