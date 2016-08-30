@@ -135,10 +135,7 @@ class Stitch:
             if message['header']['msg_type'] == 'error':
                 block = plain_output('\n'.join(message['content']['traceback']))
             else:
-                try:
-                    all_data = message['content']['data']
-                except:
-                    import pdb; pdb.set_trace()
+                all_data = message['content']['data']
                 key = min(all_data.keys(), key=lambda k: order[k])
                 data = all_data[key]
 
