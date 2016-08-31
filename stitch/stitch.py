@@ -20,6 +20,7 @@ from nbconvert.utils.base import NbConvertBase
 from pandocfilters import RawBlock, Div, CodeBlock, Image, Str, Para
 import pypandoc
 
+from .exc import StitchError
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
 CODE = 'code'
@@ -37,13 +38,15 @@ CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
 
 class Stitch:
 
-    def __init__(self, name, to='html', standalone=True):
+    def __init__(self, name, to='html', standalone=True,
+                 on_error='continue'):
         self.name = name
         self.to = to
         self.standalone = standalone
         self._kernel_pairs = {}
 
         self.resource_dir = self.name_resource_dir(name)
+        self.on_error = on_error
 
     @staticmethod
     def name_resource_dir(name):
@@ -61,6 +64,19 @@ class Stitch:
         kernel name.
         '''
         return self._kernel_pairs
+
+    @property
+    def on_error(self):
+        return self._on_error
+
+    @on_error.setter
+    def on_error(self, on_error):
+        valid = {'continue', 'raise'}
+        if on_error not in valid:
+            msg = "`on_error` must be one of %s, got %s instead" % (valid,
+                                                                    on_error)
+            raise TypeError(msg)
+        self._on_error = on_error
 
     def get_kernel(self, kernel_name):
         kp = self.kernel_managers.get(kernel_name)
@@ -133,6 +149,9 @@ class Stitch:
 
         for message in display_messages:
             if message['header']['msg_type'] == 'error':
+                if self.on_error == 'raise':
+                    exc = StitchError(message['content']['traceback'])
+                    raise exc
                 block = plain_output('\n'.join(message['content']['traceback']))
             else:
                 all_data = message['content']['data']

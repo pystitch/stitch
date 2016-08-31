@@ -352,6 +352,19 @@ class TestIntegration:
         result = blocks[1]['c'][1]
         assert '\\begin{tabular}' in result
 
+    def test_on_error_raises(self):
+        s = R.Stitch('', on_error='raise')
+        code = dedent('''\
+        ```{python}
+        1 / 0
+        ```
+        ''')
+        with pytest.raises(R.StitchError):
+            s.stitch(code)
+
+        s.on_error = 'continue'
+        s.stitch(code)
+
 
 class TestCLI:
 
@@ -403,4 +416,15 @@ class TestKernel:
                             clean_python_kernel)
         assert len(result) == 2
 
+
+class TestStitcher:
+
+    def test_on_error(self):
+        s = R.Stitch('')
+        assert s.on_error == 'continue'
+        s.on_error = 'raise'
+        assert s.on_error == 'raise'
+
+        with pytest.raises(TypeError):
+            s.on_error = 'foo'
 
