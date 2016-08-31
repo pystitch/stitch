@@ -36,7 +36,7 @@ At the moment ``stitch`` can be installed from pip via
 I know, it's confusing.
 I've filed a claim for ``stitch`` on PyPI, but I think the people working that support queue are over-worked.
 Once that gets processed, I'll put it up on conda-forge as well.
-If you need a mnemonic, it's "I want knitr, but `not` the one written in `R`.
+If you need a mnemonic, it's "I want knitr, but `not` the one written in `R`."
 Also I wanted to confuse R users.
 And knots are kind of like a buggy version of knits.
 
