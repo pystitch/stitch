@@ -37,9 +37,25 @@ CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
 # --------
 
 class Stitch:
+    '''
+    Helper class for managing the execution of a document.
+    Stores configuration variables.
+    '''
 
     def __init__(self, name, to='html', standalone=True,
                  on_error='continue'):
+        '''
+        Parameters
+        ----------
+        name : str
+            controls the directory for supporting files
+        to : str, default ``'html'``
+            output format
+        standalone : bool, default True
+            whether to make a standalone document
+        on_error : ``{"continue", "raise"}``
+            how to handle errors in the code being executed.
+        '''
         self.name = name
         self.to = to
         self.standalone = standalone
@@ -50,6 +66,9 @@ class Stitch:
 
     @staticmethod
     def name_resource_dir(name):
+        '''
+        Give the directory name for supporting resources
+        '''
         return '{}_files'.format(name)
 
     @property
@@ -67,6 +86,10 @@ class Stitch:
 
     @property
     def on_error(self):
+        '''
+        How to handle errors in the code being executed. Must be one of
+        ``{'continue', 'raise'}``.
+        '''
         return self._on_error
 
     @on_error.setter
@@ -79,6 +102,18 @@ class Stitch:
         self._on_error = on_error
 
     def get_kernel(self, kernel_name):
+        '''
+        Get a kernel from ``kernel_managers`` by ``kernel_name``,
+        creating it if needed.
+
+        Parameters
+        ----------
+        kernel_name : str
+
+        Returns
+        -------
+        kp : KernelPair
+        '''
         kp = self.kernel_managers.get(kernel_name)
         if not kp:
             kp = kernel_factory(kernel_name)
@@ -87,6 +122,19 @@ class Stitch:
         return kp
 
     def stitch(self, source):
+        '''
+        Main method for converting a document.
+
+        Parameters
+        ----------
+        source : str
+            the actual text to be converted
+
+        Returns
+        -------
+        meta, blocks : list
+            These should be compatible with pando's JSON AST
+        '''
         source = preprocess(source)
         meta, blocks = tokenize(source)
         new_blocks = []
@@ -124,10 +172,29 @@ class Stitch:
 
     def wrap_output(self, chunk_name, messages, execution_count, kp, attrs):
         '''
-        stdout is wrapped in a code block?
-        other stuff is wrapped.
+        Wrap the messages of a code-block.
 
-        return a list of blocks
+        Parameters
+        ----------
+        chunk_name : str
+        messages : list of dicts
+        execution_count : int or None
+        kp : KernelPair
+        attrs : dict
+            options from the source options-line.
+
+        Returns
+        -------
+        output_blocks : list
+
+        Notes
+        -----
+        Messages printed to stdout are wrapped in a CodeBlock.
+        Messages publishing mimetypes (e.g. matplotlib figures)
+        resuse Jupyter's display priority. See
+        ``NbConvertBase.display_data_priority``.
+
+        The result should be pandoc JSON AST compatible.
         '''
         # messsage_pairs can come from stdout or the io stream (maybe others?)
         output_messages = [x for x in messages if not is_execute_input(x)]
@@ -177,6 +244,18 @@ class Stitch:
         return output_blocks
 
     def wrap_image_output(self, chunk_name, data, key, attrs):
+        '''
+        Extra handling for images
+
+        Parameters
+        ----------
+        chunk_name, data, key : str
+        attrs: dict
+
+        Returns
+        -------
+        Para[Image]
+        '''
         # TODO: interaction of output type and standalone.
         # TODO: this can be simplified, do the file-writing in one step
         def b64_encode(data):
@@ -225,7 +304,10 @@ def convert_file(input_file: str,
     to : str
     extra_args : iterable
     output_file : str
-    filters : iterable
+
+    See Also
+    --------
+    convert
     """
     with open(input_file) as f:
         source = f.read()
@@ -236,6 +318,17 @@ def convert(source: str, to: str, extra_args: Iterable[str]=(),
             output_file: str=None) -> None:
     """
     Convert a source document to an output file.
+
+    Parameters
+    ----------
+    source : str
+    to : str
+    extra_args : iterable
+    output_file : str
+
+    Notes
+    -----
+    Either writes to ``output_file`` or prints to stdout.
     """
     output_name = (
         os.path.splitext(os.path.basename(output_file))[0]
@@ -375,8 +468,8 @@ def preprocess(source: str) -> str:
     Currently applies the following transformations
 
     - preprocess_options: transform code chunk arguments
-    to allow ``{python, arg, kwarg=val}`` instead of pandoc-style
-    ``{.python .arg kwarg=val}``
+      to allow ``{python, arg, kwarg=val}`` instead of pandoc-style
+      ``{.python .arg kwarg=val}``
 
     See Also
     --------

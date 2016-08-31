@@ -25,7 +25,7 @@ Install
 
 At the moment ``stitch`` can be installed from pip via
 
-.. code-block:
+.. code-block:: sh
 
    pip install knotr
 

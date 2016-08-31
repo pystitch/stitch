@@ -1,0 +1,22 @@
+name: stitch
+channels:
+    - conda-forge
+    - pypi
+dependencies:
+    - python=3.5.2
+    - matplotlib
+    - pandas
+    - jupyter_core
+    - traitlets
+    - ipython
+    - jupyter_client
+    - nbconvert
+    - pypandoc
+    - click
+    - pytest
+    - pytest-cov
+    - sphinx
+    - pandas
+    - sphinx_rtd_theme
+    - pip:
+        - pandocfilters
