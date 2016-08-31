@@ -74,7 +74,6 @@ class TestPreProcessor:
         ('```{r, name}', '```{.r .name}'),
         ('```{r, echo=True}', '```{.r echo=True}'),
         ('```{r, name, echo=True, eval=False}', '```{.r .name echo=True eval=False}'),
-        ('```python', '```{.python}'),
     ])
     def test_preprocess(self, options, expected):
         R.validate_options(options)

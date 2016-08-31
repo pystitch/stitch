@@ -353,7 +353,7 @@ def tokenize(source: str) -> dict:
 
 
 def validate_options(options_line):
-    xpr = re.compile(r'^```({\w+.*})|(^```\S+$)')
+    xpr = re.compile(r'^```{\w+.*}')
     if not xpr.match(options_line):
         raise TypeError("Invalid chunk options %s" % options_line)
 
@@ -396,7 +396,7 @@ def _transform(kind, text):
         result = '.' + text
     elif kind in ('DELIM' 'BLANK'):
         result = None
-    elif kind in ('OPEN', 'FENCE', 'CLOSE', 'KWARG'):
+    elif kind in ('OPEN', 'CLOSE', 'KWARG'):
         return text
     else:
         raise TypeError('Unknown kind %s' % kind)
@@ -408,20 +408,17 @@ def preprocess_options(options_line):
     Transform a code-chunk options line to allow
     ``{python, arg, kwarg=val}`` instead of pandoc-style
     ``{.python .arg kwarg=val}``.
-    Also allows the shorthand ``python`` with no arguments, which is
-    transformed to ``{.python}``.
     """
     # See Python Cookbook 3rd Ed p 67
     KWARG = r'(?P<KWARG>\w+ *= *\w+)'
     ARG = r'(?P<ARG>\w+)'
     DELIM = r'(?P<DELIM> *, *)'
     BLANK = r'(?P<BLANK>\s+)'
-    FENCE = r'(?P<FENCE>```)'
-    OPEN = r'(?P<OPEN>{)'
+    OPEN = r'(?P<OPEN>```{ *)'
     CLOSE = r'(?P<CLOSE>})'
 
     Token = namedtuple("Token", ['kind', 'value'])
-    master_pat = re.compile('|'.join([KWARG, ARG, DELIM, FENCE, OPEN,
+    master_pat = re.compile('|'.join([KWARG, ARG, DELIM, OPEN,
                                       CLOSE, BLANK]))
 
     def generate_tokens(pat, text):
@@ -430,10 +427,6 @@ def preprocess_options(options_line):
             yield Token(m.lastgroup, m.group())
 
     tok = list(generate_tokens(master_pat, options_line))
-    if [x.kind for x in tok].count("OPEN") == 0:
-        assert tok[0].kind == 'FENCE' and tok[1].kind == 'ARG'
-        tok.insert(1, Token("OPEN", "{"))
-        tok.append(Token("CLOSE", "}"))
 
     items = (_transform(kind, text) for kind, text in tok)
     items = filter(None, items)
