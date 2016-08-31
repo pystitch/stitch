@@ -11,7 +11,7 @@ A `knitr <http://yihui.name/knitr/>`__- `RMarkdown <http://rmarkdown.rstudio.com
 instead. It's probably more mature at this point. However, I wanted
 to see if there was a simpler way of doing things.
 
-The high-level goal of this type of library (knitr/RMakrdown, knitpy, and stitch) is to make writing
+The high-level goal of this type of library (knitr/RMarkdown, knitpy, and stitch) is to make writing
 reproducible reports easier.
 
 Documentation is available on `readthedocs <http://stitch.readthedocs.io>`__.
