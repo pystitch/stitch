@@ -15,6 +15,14 @@ While ``stitch`` is written in python, it can be used for
 any of the dozens of `Jupyter
 kernels <https://github.com/ipython/ipython/wiki/IPython-kernels-for-other-languages>`__.
 
+Examples
+--------
+
+See the `example site <https://pystitch.github.io>`__ for a side-by-side
+comparison of the markdown source and rendered output.
+Links to a more complicated document rendered in various formats
+is also provided.
+
 Install
 -------
 
@@ -77,13 +85,6 @@ stitch defines a few new options that control stitch-specific features
 * ``--no-standalone``
 * ``--no-self-contained``
 
-Examples
---------
-
-See the `example site <https://pystitch.github.io>`__ for a side-by-side
-comparison of the markdown source and rendered output.
-Links to a more complicated document rendered in various formats
-is also provided.
 
 What's in a Name?
 -----------------

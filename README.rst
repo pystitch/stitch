@@ -3,6 +3,8 @@ Stitch
 
 |Build Status|
 
+|Documentation Status|
+
 A `knitr <http://yihui.name/knitr/>`__-like library, in Python.
 
 *Note:* You might want to consider `knitpy <https://github.com/janschulz/knitpy/>`__
@@ -11,6 +13,8 @@ to see if there was a simpler way of doing things.
 
 The high-level goal of this type of library is to make writing
 reproducible reports easier.
+
+Documentation is available on `readthedocs <http://stitch.readthedocs.io>`__.
 
 Examples
 ========
@@ -73,3 +77,6 @@ The only drawback so far is somewhat inscrutable Haskell exceptions if
 
 .. |Build Status| image:: https://travis-ci.org/TomAugspurger/stitch.svg?branch=master
    :target: https://travis-ci.org/TomAugspurger/stitch
+
+.. |Documentation Status| image:: https://readthedocs.org/projects/stitch/badge/?version=latest
+   :target: http://stitch.readthedocs.io/en/latest/?badge=latest
