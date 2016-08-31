@@ -75,7 +75,7 @@ This saves us from having do any kind of custom parsing of the markdown.
 The only drawback so far is somewhat inscrutable Haskell exceptions if
 ``stitch`` happens to produce a bad document.
 
-.. |Build Status| image:: https://travis-ci.org/TomAugspurger/stitch.svg?branch=master
+.. |Build Status| image:: https://travis-ci.org/pystitch/stitch.svg?branch=master
    :target: https://travis-ci.org/pystitch/stitch
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/stitch/badge/?version=latest
