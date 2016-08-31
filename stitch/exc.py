@@ -1,0 +1,3 @@
+class StitchError(Exception):
+    pass
+
