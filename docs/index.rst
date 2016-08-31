@@ -11,6 +11,10 @@ making reproducible reports. It takes a markdown source file, executes
 the code chunks, captures the output, and stitches the output into the
 destination file.
 
+Those familiar with `knitr <http://yihui.name/knitr/>`__ and `RMarkdown <http://rmarkdown.rstudio.com>`__
+will recognize it as a python clone of those great libraries.
+It's also heavily influenced by `knitpy <https://github.com/janschulz/knitpy>`__.
+
 While ``stitch`` is written in python, it can be used for
 any of the dozens of `Jupyter
 kernels <https://github.com/ipython/ipython/wiki/IPython-kernels-for-other-languages>`__.
