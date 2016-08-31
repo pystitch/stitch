@@ -3,11 +3,38 @@ Stitch
 
 |Build Status|
 
-An experimental knitr-like library, in Python.
+A `knitr <http://yihui.name/knitr/>`__-like library, in Python.
 
-*Note:* You should use `knitpy <https://github.com/janschulz/knitpy/>`__
-instead. This is an unfinished, worse version of it. However, I wanted
+*Note:* You might want to consider `knitpy <https://github.com/janschulz/knitpy/>`__
+instead. It's probably more mature at this point. However, I wanted
 to see if there was a simpler way of doing things.
+
+The high-level goal of this type of library is to make writing
+reproducible reports easier.
+
+Examples
+========
+
+See the project's `website <https://pystitch.github.io>`__ for a
+side-by-side comparison of input markdown and stitched HTML.
+
+More complex examples are linked to from there as well.
+
+Install
+=======
+
+At the moment ``stitch`` can be installed from pip via
+
+.. code-block:
+
+   pip install knotr
+
+I know, it's confusing.
+I've filed a claim for ``stitch`` on PyPI, but I think the people working that support queue are over-worked.
+Once that gets processed, I'll put it up on conda-forge as well.
+If you need a mnemonic, it's "I want knitr, but `not` the one written in `R`.
+Also I wanted to confuse R users.
+And knots are kind of like a buggy version of knits.
 
 Design
 ======
@@ -43,12 +70,6 @@ This is what you get from ``pandoc -t json input.md``
 This saves us from having do any kind of custom parsing of the markdown.
 The only drawback so far is somewhat inscrutable Haskell exceptions if
 ``stitch`` happens to produce a bad document.
-
-An Example
-==========
-
-See the project's `website <https://pystitch.github.io>`__ for a
-side-by-side comparison of input markdown and stitched HTML.
 
 .. |Build Status| image:: https://travis-ci.org/TomAugspurger/stitch.svg?branch=master
    :target: https://travis-ci.org/TomAugspurger/stitch
