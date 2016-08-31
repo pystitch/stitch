@@ -76,7 +76,7 @@ The only drawback so far is somewhat inscrutable Haskell exceptions if
 ``stitch`` happens to produce a bad document.
 
 .. |Build Status| image:: https://travis-ci.org/TomAugspurger/stitch.svg?branch=master
-   :target: https://travis-ci.org/TomAugspurger/stitch
+   :target: https://travis-ci.org/pystitch/stitch
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/stitch/badge/?version=latest
    :target: http://stitch.readthedocs.io/en/latest/?badge=latest
