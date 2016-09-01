@@ -239,6 +239,8 @@ class Stitch:
                     block = RawBlock('html', data)
                 elif key.startswith('image'):
                     block = self.wrap_image_output(chunk_name, data, key, attrs)
+                else:
+                    block = tokenize_block(data)
 
             output_blocks.append(block)
         return output_blocks
@@ -444,6 +446,9 @@ def tokenize(source: str) -> dict:
     """
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
 
+
+def tokenize_block(source):
+    return tokenize(source)[1][0]
 
 def validate_options(options_line):
     xpr = re.compile(r'^```{\w+.*}')

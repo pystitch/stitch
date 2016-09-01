@@ -364,6 +364,21 @@ class TestIntegration:
         s.on_error = 'continue'
         s.stitch(code)
 
+    @pytest.mark.parametrize('to', [
+        'html', 'pdf', 'latex', 'docx',
+    ])
+    def test_ipython_display(self, clean_python_kernel, to):
+        s = R.Stitch('', to=to)
+        code = dedent('''\
+        from IPython import display
+        import math
+        display.Markdown("$\\alpha^{pi:1.3f}$".format(pi=math.pi))
+        ''')
+        messages = R.run_code(code, clean_python_kernel)
+        wrapped = s.wrap_output('', messages, None, clean_python_kernel, {})[0]
+        assert wrapped['t'] == 'Para'
+        assert wrapped['c'][0]['c'][0]['t'] == 'InlineMath'
+
 
 class TestCLI:
 
