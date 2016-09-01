@@ -126,6 +126,7 @@ Contents:
 
    self
    api
+   whatsnew
 
 
 Indices and tables
