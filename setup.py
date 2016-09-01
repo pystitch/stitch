@@ -45,9 +45,10 @@ setup(
     extras_require={
         'dev': ['pytest', 'pytest-cov', 'sphinx', 'pandas', 'matplotlib'],
     },
-    # package_data={
-    #     'sample': ['package_data.dat'],
-    # },
+    include_pacakge_data=True,
+    package_data={
+        'stitch': ['static/*'],
+    },
     entry_points={
         'console_scripts': [
             'stitch=stitch.cli:cli',
