@@ -56,10 +56,3 @@ All parameters are separated by a comma.
 
          This will probably change to ``fig.height`` in a future release.
 
-stitch
-~~~~~~~
-
-.. automodule:: stitch.stitch
-   :members:
-
-
