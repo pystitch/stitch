@@ -336,6 +336,23 @@ class TestIntegration:
         assert ('width', '10') in attrs
         assert ('height', '10px') in attrs
 
+    @pytest.mark.parametrize('warning, length', [
+        (True, 3),
+        (False, 2),
+    ])
+    def test_warning(self, clean_python_kernel, warning, length):
+        code = dedent('''\
+        ```{python}
+        import warnings
+        warnings.warn("Hi")
+        2
+        ```
+        ''')
+        r = R.Stitch('foo', to='html', warning=warning)
+        r._kernel_pairs['python'] = clean_python_kernel
+        result = r.stitch(code)
+        assert len(result[1]) == length
+
     @pytest.mark.parametrize('to', ['latex', 'beamer'])
     def test_rich_output(self, to, clean_python_kernel):
         code = dedent('''\

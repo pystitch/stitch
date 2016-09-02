@@ -42,6 +42,7 @@ class Stitch:
     '''
 
     def __init__(self, name, to='html', standalone=True,
+                 warning=True,
                  on_error='continue'):
         '''
         Parameters
@@ -52,12 +53,15 @@ class Stitch:
             output format
         standalone : bool, default True
             whether to make a standalone document
+        warning : bool, default True
+            whether to include warnings (stderr) in the ouput.
         on_error : ``{"continue", "raise"}``
             how to handle errors in the code being executed.
         '''
         self.name = name
         self.to = to
         self.standalone = standalone
+        self.warning = warning
         self._kernel_pairs = {}
 
         self.resource_dir = self.name_resource_dir(name)
@@ -197,17 +201,16 @@ class Stitch:
         '''
         # messsage_pairs can come from stdout or the io stream (maybe others?)
         output_messages = [x for x in messages if not is_execute_input(x)]
-        std_out_messages = [x for x in output_messages if is_stdout(x)]
-        std_err_messages = [x for x in output_messages if is_stderr(x)]
         display_messages = [x for x in output_messages if not is_stdout(x) and
                             not is_stderr(x)]
 
         output_blocks = []
 
         # Handle all stdout first...
-        for message in std_out_messages + std_err_messages:
-            text = message['content']['text']
-            output_blocks.append(plain_output(text))
+        for message in output_messages:
+            if is_stdout(message) or (is_stderr(message) and self.warning):
+                text = message['content']['text']
+                output_blocks.append(plain_output(text))
 
         order = dict(
             (x[1], x[0]) for x in enumerate(NbConvertBase().display_data_priority)

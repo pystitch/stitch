@@ -40,6 +40,10 @@ All parameters are separated by a comma.
 
       * hide: hide the chunk output (but still execute the chunk)
 
+   .. method:: warning(True)
+
+      bool; whether to include warnings (stderr) in the ouput.
+
    .. method:: width(w)
 
       Width for output figure. See http://pandoc.org/MANUAL.html#images
