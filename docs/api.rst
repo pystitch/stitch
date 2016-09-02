@@ -1,15 +1,12 @@
 API
 ===
 
-stitch
-~~~~~~~
-
-.. automodule:: stitch.stitch
-   :members:
+Chunk Options
+~~~~~~~~~~~~~
 
 Code chunks are blocks that look like
 
-.. code-block:: python
+.. code-block:: none
 
    ```{kernel_name, [chunk_name], **kwargs}
    # code
@@ -17,11 +14,6 @@ Code chunks are blocks that look like
 
 The ``kernel_name`` is required, and ``chunk_name`` is optional.
 All parameters are separated by a comma.
-
-Chunk Options
-~~~~~~~~~~~~~
-
-.. automodule:: stitch.options
 
    .. method:: kernel_name(name: str)
 
@@ -63,3 +55,11 @@ Chunk Options
       .. warning::
 
          This will probably change to ``fig.height`` in a future release.
+
+stitch
+~~~~~~~
+
+.. automodule:: stitch.stitch
+   :members:
+
+
