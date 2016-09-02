@@ -1,2 +1,3 @@
+include stitch/static/*
 include versioneer.py
 include stitch/_version.py
