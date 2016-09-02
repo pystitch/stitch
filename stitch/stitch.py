@@ -11,7 +11,6 @@ import re
 import copy
 import json
 import base64
-from typing import List, Optional, Iterable
 from collections import namedtuple
 from queue import Empty
 
@@ -295,8 +294,8 @@ class Stitch:
 
 def convert_file(input_file: str,
                  to: str,
-                 extra_args: Iterable[str]=(),
-                 output_file: Optional[str]=None) -> None:
+                 extra_args=(),
+                 output_file=None) -> None:
     """
     Convert a markdown ``input_file`` to ``to``.
 
@@ -316,7 +315,7 @@ def convert_file(input_file: str,
     convert(source, to, extra_args=extra_args, output_file=output_file)
 
 
-def convert(source: str, to: str, extra_args: Iterable[str]=(),
+def convert(source: str, to: str, extra_args=(),
             output_file: str=None) -> None:
     """
     Convert a source document to an output file.
@@ -611,7 +610,7 @@ def execute_block(block, kp, timeout=None):
     return messages
 
 
-def run_code(code: str, kp: KernelPair, timeout=None) -> List:
+def run_code(code: str, kp: KernelPair, timeout=None):
     '''
     Execute a code chunk, capturing the output.
 
@@ -681,8 +680,7 @@ def run_code(code: str, kp: KernelPair, timeout=None) -> List:
     return messages
 
 
-def extract_execution_count(
-        messages: List[dict]) -> Optional[int]:
+def extract_execution_count(messages):
     '''
     '''
     for message in messages:
