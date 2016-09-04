@@ -4,6 +4,7 @@ from textwrap import dedent
 
 import pytest
 import pypandoc
+from traitlets import TraitError
 
 import stitch.stitch as R
 from stitch.cli import enhance_args, CSS
@@ -227,16 +228,32 @@ class TestFormatters:
 
     def test_format_input(self):
         code = '2 + 2'
+        expected = '>>> 2 + 2'
+        result = R.format_input_prompt('>>> ', code, None)
+        assert result == expected
+
+    def test_format_input_multi(self):
+        code = dedent('''\
+            def f(x):
+                return x''')
+        expected = dedent('''\
+            >>> def f(x):
+            >>>     return x''')
+        result = R.format_input_prompt('>>> ', code, None)
+        assert result == expected
+
+    def test_format_ipython_input(self):
+        code = '2 + 2'
         expected = 'In [1]: 2 + 2'
-        result = R.format_input_prompt(code, 1)
+        result = R.format_ipython_prompt(code, 1)
         assert result == expected
 
     def test_format_input_none(self):
         code = 'abcde'
-        result = R.format_input_prompt(code, None)
+        result = R.format_ipython_prompt(code, None)
         assert result == code
 
-    def test_format_input_multi(self):
+    def test_format_ipython_input_multi(self):
         code = dedent('''\
         def f(x):
             return x + 2
@@ -249,12 +266,12 @@ class TestFormatters:
             ...:
             ...: f(2)
         ''').strip()
-        result = R.format_input_prompt(code, 10)
+        result = R.format_ipython_prompt(code, 10)
         assert result == expected
 
     def test_wrap_input__code(self):
         block = {'t': 'code', 'c': ['a', ['b'], 'c']}
-        result = R.wrap_input_code(block, None)
+        result = R.wrap_input_code(block, None, None)
         assert block is not result
 
     @pytest.mark.parametrize('messages,expected', [
@@ -368,8 +385,8 @@ class TestIntegration:
         result = blocks[1]['c'][1]
         assert '\\begin{tabular}' in result
 
-    def test_on_error_raises(self):
-        s = R.Stitch('', on_error='raise')
+    def test_error_raises(self):
+        s = R.Stitch('', error='raise')
         code = dedent('''\
         ```{python}
         1 / 0
@@ -378,7 +395,7 @@ class TestIntegration:
         with pytest.raises(R.StitchError):
             s.stitch(code)
 
-        s.on_error = 'continue'
+        s.error = 'continue'
         s.stitch(code)
 
     @pytest.mark.parametrize('to', [
@@ -450,12 +467,12 @@ class TestKernel:
 
 class TestStitcher:
 
-    def test_on_error(self):
+    def test_error(self):
         s = R.Stitch('')
-        assert s.on_error == 'continue'
-        s.on_error = 'raise'
-        assert s.on_error == 'raise'
+        assert s.error == 'continue'
+        s.error = 'raise'
+        assert s.error == 'raise'
 
-        with pytest.raises(TypeError):
-            s.on_error = 'foo'
+        with pytest.raises(TraitError):
+            s.error = 'foo'
 

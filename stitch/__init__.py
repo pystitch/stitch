@@ -1,5 +1,5 @@
 from .stitch import (  # noqa
-    convert, convert_file, kernel_factory, run_code
+    convert, convert_file, kernel_factory, run_code, Stitch
 )
 from .cli import cli  # noqa
 

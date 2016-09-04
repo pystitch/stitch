@@ -14,12 +14,14 @@ import base64
 from collections import namedtuple
 from queue import Empty
 
+from traitlets import HasTraits
 from jupyter_client.manager import start_new_kernel
 from nbconvert.utils.base import NbConvertBase
 from pandocfilters import RawBlock, Div, CodeBlock, Image, Str, Para
 import pypandoc
 
 from .exc import StitchError
+from . import options as opt
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
 CODE = 'code'
@@ -35,15 +37,33 @@ CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
 # User API
 # --------
 
-class Stitch:
+class Stitch(HasTraits):
     '''
     Helper class for managing the execution of a document.
     Stores configuration variables.
     '''
 
-    def __init__(self, name, to='html', standalone=True,
+    # Document-traits
+    to = opt.Str('html')
+    title = opt.Str(None)
+    date = opt.Str(None)
+    author = opt.Str(None)  # TODO: Multiple authors...
+    title = opt.Str(None)
+    self_contained = opt.Bool(True)
+    standalone = opt.Bool(True)
+
+    # Document or Cell
+    warning = opt.Bool(True)
+    error = opt.Choice({"continue", "raise"}, default_value="continue")
+    prompt = opt.Str(None)
+    echo = opt.Bool(True)
+    eval = opt.Bool(True)
+
+    def __init__(self, name, to='html',
+                 standalone=True,
                  warning=True,
-                 on_error='continue'):
+                 error='continue',
+                 prompt=None):
         '''
         Parameters
         ----------
@@ -55,17 +75,19 @@ class Stitch:
             whether to make a standalone document
         warning : bool, default True
             whether to include warnings (stderr) in the ouput.
-        on_error : ``{"continue", "raise"}``
+        error : ``{"continue", "raise"}``
             how to handle errors in the code being executed.
         '''
+        self._kernel_pairs = {}
         self.name = name
         self.to = to
+        self.resource_dir = self.name_resource_dir(name)
+
         self.standalone = standalone
         self.warning = warning
-        self._kernel_pairs = {}
 
-        self.resource_dir = self.name_resource_dir(name)
-        self.on_error = on_error
+        self.error = error
+        self.prompt = prompt
 
     @staticmethod
     def name_resource_dir(name):
@@ -75,34 +97,12 @@ class Stitch:
         return '{}_files'.format(name)
 
     @property
-    def self_contained(self):
-        # return self.to not in ('pdf', 'docx')
-        return True
-
-    @property
     def kernel_managers(self):
         '''
         dict of KernelManager, KernelClient pairs, keyed by
         kernel name.
         '''
         return self._kernel_pairs
-
-    @property
-    def on_error(self):
-        '''
-        How to handle errors in the code being executed. Must be one of
-        ``{'continue', 'raise'}``.
-        '''
-        return self._on_error
-
-    @on_error.setter
-    def on_error(self, on_error):
-        valid = {'continue', 'raise'}
-        if on_error not in valid:
-            msg = "`on_error` must be one of %s, got %s instead" % (valid,
-                                                                    on_error)
-            raise TypeError(msg)
-        self._on_error = on_error
 
     def get_kernel(self, kernel_name):
         '''
@@ -124,6 +124,19 @@ class Stitch:
             self.kernel_managers[kernel_name] = kp
         return kp
 
+    def get_option(self, option, attrs=None):
+        if attrs is None:
+            attrs = {}
+        return attrs.get(option, getattr(self, option))
+
+    def parse_document_options(self, meta):
+        '''
+        Modifies self to update options, depending on the document.
+        '''
+        for attr, val in meta['unMeta'].items():
+            if self.has_trait(attr):
+                self.set_trait(attr, val)
+
     def stitch(self, source):
         '''
         Main method for converting a document.
@@ -140,6 +153,8 @@ class Stitch:
         '''
         source = preprocess(source)
         meta, blocks = tokenize(source)
+
+        self.parse_document_options(meta)
         new_blocks = []
 
         for i, block in enumerate(blocks):
@@ -162,8 +177,10 @@ class Stitch:
                 messages = []
 
             # ... now handle input formatting...
-            if attrs.get('echo', True):
-                new_blocks.append(wrap_input_code(block, execution_count))
+            if self.get_option('echo', attrs):
+                prompt = self.get_option('prompt', attrs)
+                new_blocks.append(wrap_input_code(block, prompt,
+                                                  execution_count))
 
             # ... and output formatting
             if is_stitchable(messages, attrs):
@@ -208,7 +225,8 @@ class Stitch:
 
         # Handle all stdout first...
         for message in output_messages:
-            if is_stdout(message) or (is_stderr(message) and self.warning):
+            warning = self.get_option('warning', attrs)
+            if is_stdout(message) or (is_stderr(message) and warning):
                 text = message['content']['text']
                 output_blocks.append(plain_output(text))
 
@@ -218,7 +236,8 @@ class Stitch:
 
         for message in display_messages:
             if message['header']['msg_type'] == 'error':
-                if self.on_error == 'raise':
+                error = self.get_option('error', attrs)
+                if error == 'raise':
                     exc = StitchError(message['content']['traceback'])
                     raise exc
                 block = plain_output('\n'.join(message['content']['traceback']))
@@ -406,12 +425,24 @@ def is_stitchable(result, attrs):
 # ----------
 # Formatting
 # ----------
-def format_input_prompt(code, number):
+def format_input_prompt(prompt, code, number):
+    '''
+    Format the actual input code-text.
+    '''
+    if prompt is None:
+        return format_ipython_prompt(code, number)
+    lines = code.split('\n')
+    formatted = '\n'.join([prompt + line for line in lines])
+    return formatted
+
+
+def format_ipython_prompt(code, number):
     """
     Wrap the input code in IPython style ``In [X]:`` markers.
     """
     if number is None:
         return code
+
     start = 'In [{}]: '.format(number)
     split = code.split('\n')
 
@@ -426,10 +457,10 @@ def format_input_prompt(code, number):
     return formatted
 
 
-def wrap_input_code(block, execution_count):
+def wrap_input_code(block, prompt, execution_count):
     new = copy.deepcopy(block)
     code = block['c'][1]
-    new['c'][1] = format_input_prompt(code, execution_count)
+    new['c'][1] = format_input_prompt(prompt, code, execution_count)
     return new
 
 

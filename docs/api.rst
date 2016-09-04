@@ -1,6 +1,9 @@
 API
 ===
 
+.. autoclass:: stitch.Stitch
+   :members:
+
 Chunk Options
 ~~~~~~~~~~~~~
 
