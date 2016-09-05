@@ -33,6 +33,15 @@ KernelPair = namedtuple("KernelPair", "km kc")
 CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
 
 
+class _Fig(HasTraits):
+    '''
+    Sub-traitlet for fig related options.
+    Traitlets all the way down.
+    '''
+
+    width = opt.Str(None)
+    height = opt.Str(None)
+
 # --------
 # User API
 # --------
@@ -58,6 +67,7 @@ class Stitch(HasTraits):
     prompt = opt.Str(None)
     echo = opt.Bool(True)
     eval = opt.Bool(True)
+    fig = _Fig()
 
     def __init__(self, name, to='html',
                  standalone=True,
@@ -88,6 +98,34 @@ class Stitch(HasTraits):
 
         self.error = error
         self.prompt = prompt
+
+    def __getattr__(self, attr):
+        if '.' in attr:
+            thing, attr = attr.split('.', 1)
+            return getattr(getattr(self, thing), attr)
+        else:
+            return getattr(super(), attr)
+
+    def has_trait(self, name):
+        # intercepted `.`ed names for ease of use
+        if '.' in name:
+            ns, name = name.split('.', 1)
+            try:
+                accessor = getattr(self, ns)
+            except AttributeError:
+                return False
+            return accessor.has_trait(name)
+        else:
+            return super().has_trait(name)
+
+    def set_trait(self, name, value):
+        # intercepted `.`ed names for ease of use
+        if '.' in name:
+            ns, name = name.split('.', 1)
+            accessor = getattr(self, ns)
+            return accessor.set_trait(name, value)
+        else:
+            return super().set_trait(name, value)
 
     @staticmethod
     def name_resource_dir(name):
@@ -286,7 +324,15 @@ class Stitch(HasTraits):
 
         # TODO: dict of attrs on Stitcher.
         image_attrs = {'width', 'height'}
-        attrs = [(k, v) for k, v in attrs.items() if k in image_attrs]
+
+        def transform_key(k):
+            # fig.width -> width, fig.height -> height;
+            return k.split('fig.', 1)[-1]
+
+        attrs = [(transform_key(k), v)
+                 for k, v in attrs.items()
+                 if transform_key(k) in image_attrs]
+
         if self.self_contained:
             if 'png' in key:
                 data = 'data:image/png;base64,{}'.format(data)
@@ -541,7 +587,7 @@ def preprocess_options(options_line):
     ``{.python .arg kwarg=val}``.
     """
     # See Python Cookbook 3rd Ed p 67
-    KWARG = r'(?P<KWARG>\w+ *= *\w+)'
+    KWARG = r'(?P<KWARG>\S+ *= *[^,]+)'
     ARG = r'(?P<ARG>\w+)'
     DELIM = r'(?P<DELIM> *, *)'
     BLANK = r'(?P<BLANK>\s+)'

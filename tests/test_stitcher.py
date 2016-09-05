@@ -342,7 +342,7 @@ class TestIntegration:
 
     def test_image_attrs(self):
         code = dedent('''\
-        ```{python, chunk, width=10, height=10px}
+        ```{python, chunk, fig.width=10, fig.height=10px}
         %matplotlib inline
         import matplotlib.pyplot as plt
         plt.plot(range(4), range(4));
@@ -475,4 +475,20 @@ class TestStitcher:
 
         with pytest.raises(TraitError):
             s.error = 'foo'
+
+    def test_getattr(self):
+        s = R.Stitch('')
+        assert getattr(s, 'fig.width') is None
+        assert s.fig.width is None
+        with pytest.raises(AttributeError):
+            assert getattr(s, 'foo.bar')
+
+        with pytest.raises(AttributeError):
+            assert getattr(s, 'foo')
+
+    def test_has_trait(self):
+        s = R.Stitch('')
+        assert s.has_trait('fig.width')
+        assert not s.has_trait('fake.width')
+        assert not s.has_trait('fig.fake')
 
