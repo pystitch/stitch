@@ -1,5 +1,7 @@
 import os
 import json
+import uuid
+import shutil
 from textwrap import dedent
 
 import pytest
@@ -30,6 +32,18 @@ def clean_python_kernel(global_python_kernel):
     R.run_code('%reset -f', global_python_kernel)
     return global_python_kernel
 
+
+@pytest.fixture
+def clean_name():
+    name = str(uuid.uuid1())
+    yield name
+    shutil.rmtree(name + '_files')
+
+
+@pytest.fixture
+def clean_stdout():
+    yield
+    shutil.rmtree('std_out_files')
 
 @pytest.fixture
 def document_path():
@@ -308,10 +322,10 @@ class TestFormatters:
 @pytest.mark.slow
 class TestIntegration:
 
-    def test_from_file(self, document_path):
+    def test_from_file(self, document_path, clean_stdout):
         R.convert_file(document_path, 'html')
 
-    def test_from_source(self, document):
+    def test_from_source(self, document, clean_stdout):
         R.convert(document, 'html')
 
     @pytest.mark.parametrize("to, value", [
@@ -352,6 +366,21 @@ class TestIntegration:
         attrs = result[1][1]['c'][0]['c'][0][2]
         assert ('width', '10') in attrs
         assert ('height', '10px') in attrs
+
+    def test_image_no_self_contained(self, clean_python_kernel, clean_name):
+        code = dedent('''\
+        ```{python}
+        %matplotlib inline
+        import matplotlib.pyplot as plt
+        plt.plot(range(4))
+        ```
+        ''')
+        s = R.Stitch(clean_name, self_contained=False)
+        s._kernel_pairs['python'] = clean_python_kernel
+        meta, blocks = s.stitch(code)
+        expected = '{}_files/unnamed_chunk_0.png'.format(clean_name)
+        result = blocks[-1]['c'][0]['c'][2][0]
+        assert result == expected
 
     @pytest.mark.parametrize('warning, length', [
         (True, 3),

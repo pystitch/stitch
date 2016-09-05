@@ -50,6 +50,44 @@ class Stitch(HasTraits):
     '''
     Helper class for managing the execution of a document.
     Stores configuration variables.
+
+    Attributes
+    ----------
+    to : str
+        The output file format. Optionally inferred by the output file
+        file extension.
+    title : str
+        The name of the output document.
+    date : str
+    author : str
+    self_contained : bool, default True
+        Whether to publish a self-contained document, where
+        things like images or CSS stylesheets are inlined as ``data``
+        attributes.
+    standalone : bool
+        Whether to publish a standalone document (True) or fragment (False).
+        Standalone documents include items like ``<head>`` elements, whereas
+        non-standlone documents are just the ``<body>`` element.
+    warning : bool, default True
+        Whether to include text printed to stderr in the output
+    error : str, default 'continue'
+        How to handle exceptions in the executed code-chunks.
+    prompt : str, optional
+        String to put before each line of the input code. Defaults
+        to IPython-style counters.
+    echo : bool, default True
+        Whether to include the input code-chunk in the output document.
+    eval : bool, default True
+        Whether to execute the code-chunk.
+
+    fig.width : str
+    fig.height : str
+
+
+    Notes
+    -----
+    Attirbutes can be set via the command-line, document YAML metadata,
+    or (where appropriate) the chunk-options line.
     '''
 
     # Document-traits
@@ -57,7 +95,6 @@ class Stitch(HasTraits):
     title = opt.Str(None)
     date = opt.Str(None)
     author = opt.Str(None)  # TODO: Multiple authors...
-    title = opt.Str(None)
     self_contained = opt.Bool(True)
     standalone = opt.Bool(True)
 
@@ -71,6 +108,7 @@ class Stitch(HasTraits):
 
     def __init__(self, name, to='html',
                  standalone=True,
+                 self_contained=True,
                  warning=True,
                  error='continue',
                  prompt=None):
@@ -94,6 +132,7 @@ class Stitch(HasTraits):
         self.resource_dir = self.name_resource_dir(name)
 
         self.standalone = standalone
+        self.self_contained = self_contained
         self.warning = warning
 
         self.error = error
@@ -348,6 +387,7 @@ class Stitch(HasTraits):
             # we are saving to filesystem
             filepath = os.path.join(self.resource_dir,
                                     "{}.png".format(chunk_name))
+            os.makedirs(self.resource_dir, exist_ok=True)
             with open(filepath, 'wb') as f:
                 f.write(base64.decodestring(data.encode('ascii')))
             # Image :: alt text (list of inlines), target
@@ -406,7 +446,9 @@ def convert(source: str, to: str, extra_args=(),
     )
 
     standalone = '--standalone' in extra_args
-    stitcher = Stitch(name=output_name, to=to, standalone=standalone)
+    self_contained = '--self-contained' in extra_args
+    stitcher = Stitch(name=output_name, to=to, standalone=standalone,
+                      self_contained=self_contained)
     meta, blocks = stitcher.stitch(source)
     result = json.dumps([meta, blocks])
     newdoc = pypandoc.convert_text(result, to, format='json',
