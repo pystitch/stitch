@@ -65,5 +65,19 @@ class TestOptions:
         expected = meta[key]
         assert result == expected
 
+@pytest.mark.slow
+class TestOptionsKernel:
+
+    def test_fig_cap(self):
+        code = dedent('''\
+        ```{python, fig.cap="This is a caption"}
+        import matplotlib.pyplot as plt
+        plt.plot(range(4), range(4))
+        ```''')
+        s = Stitch('')
+        meta, blocks = s.stitch(code)
+        result = blocks[-1]['c'][0]['c'][1][0]['c']
+        assert result == 'This is a caption'
+
 
 

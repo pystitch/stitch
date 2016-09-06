@@ -4,6 +4,7 @@ Whatsnew
 Version 0.3.4
 `````````````
 
+- API: Accept ``fig.cap`` as a chunk option to control the figure caption (:issue:`38`:)
 - API: Exposed the ``no-self-contained`` command-line option to the stitching
   operation.
 - API: Added a ``warning`` option for controling whether stderr is included in the output.

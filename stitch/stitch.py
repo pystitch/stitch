@@ -41,6 +41,7 @@ class _Fig(HasTraits):
 
     width = opt.Str(None)
     height = opt.Str(None)
+    cap = opt.Str(None)
 
 # --------
 # User API
@@ -362,7 +363,8 @@ class Stitch(HasTraits):
             return base64.encodestring(data.encode('ascii')).decode('ascii')
 
         # TODO: dict of attrs on Stitcher.
-        image_attrs = {'width', 'height'}
+        image_keys = {'width', 'height'}
+        caption = attrs.get('fig.cap', '')
 
         def transform_key(k):
             # fig.width -> width, fig.height -> height;
@@ -370,7 +372,7 @@ class Stitch(HasTraits):
 
         attrs = [(transform_key(k), v)
                  for k, v in attrs.items()
-                 if transform_key(k) in image_attrs]
+                 if transform_key(k) in image_keys]
 
         if self.self_contained:
             if 'png' in key:
@@ -379,7 +381,7 @@ class Stitch(HasTraits):
                 data = 'data:image/svg+xml;base64,{}'.format(b64_encode(data))
             if 'png' in key or 'svg' in key:
                 block = Para([Image([chunk_name, [], attrs],
-                                    [Str("")],
+                                    [Str(caption)],
                                     [data, ""])])
             else:
                 raise TypeError("Unknown mimetype %s" % key)
@@ -394,7 +396,7 @@ class Stitch(HasTraits):
             # Image :: Attr [Inline] Target
             # Target :: (string, string)  of (URL, title)
             block = Para([Image([chunk_name, [], []],
-                                [Str("")],
+                                [Str(caption)],
                                 [filepath, "fig: {}".format(chunk_name)])])
 
         return block
