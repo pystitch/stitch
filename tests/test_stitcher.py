@@ -382,6 +382,29 @@ class TestIntegration:
         result = blocks[-1]['c'][0]['c'][2][0]
         assert result == expected
 
+    @pytest.mark.parametrize('fmt', ['png', 'svg', 'pdf'])
+    def test_image_no_self_contained_formats(self, clean_python_kernel,
+                                             clean_name, fmt):
+        code = dedent('''\
+        ```{{python}}
+        %matplotlib inline
+        from IPython.display import set_matplotlib_formats
+        import numpy as np
+        import matplotlib.pyplot as plt
+        set_matplotlib_formats('{fmt}')
+
+        x = np.linspace(-np.pi / 2, np.pi / 2)
+        plt.plot(x, np.sin(x))
+        plt.plot(x, np.cos(x))
+        ```
+        ''').format(fmt=fmt)
+        s = R.Stitch(clean_name, self_contained=False)
+        s._kernel_pairs['python'] = clean_python_kernel
+        meta, blocks = s.stitch(code)
+        expected = os.path.join(clean_name + '_files',
+                                'unnamed_chunk_0.' + fmt)
+        assert os.path.exists(expected)
+
     @pytest.mark.parametrize('warning, length', [
         (True, 3),
         (False, 2),

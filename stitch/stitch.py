@@ -11,6 +11,7 @@ import re
 import copy
 import json
 import base64
+import mimetypes
 from collections import namedtuple
 from queue import Empty
 
@@ -336,7 +337,7 @@ class Stitch(HasTraits):
                     block = RawBlock('latex', data)
                 elif key == 'text/html':
                     block = RawBlock('html', data)
-                elif key.startswith('image'):
+                elif key.startswith('image') or key == 'application/pdf':
                     block = self.wrap_image_output(chunk_name, data, key, attrs)
                 else:
                     block = tokenize_block(data)
@@ -387,11 +388,16 @@ class Stitch(HasTraits):
                 raise TypeError("Unknown mimetype %s" % key)
         else:
             # we are saving to filesystem
+            ext = mimetypes.guess_extension(key)
             filepath = os.path.join(self.resource_dir,
-                                    "{}.png".format(chunk_name))
+                                    "{}{}".format(chunk_name, ext))
             os.makedirs(self.resource_dir, exist_ok=True)
-            with open(filepath, 'wb') as f:
-                f.write(base64.decodestring(data.encode('ascii')))
+            if ext == '.svg':
+                with open(filepath, 'wt') as f:
+                    f.write(data)
+            else:
+                with open(filepath, 'wb') as f:
+                    f.write(base64.decodestring(data.encode('utf-8')))
             # Image :: alt text (list of inlines), target
             # Image :: Attr [Inline] Target
             # Target :: (string, string)  of (URL, title)
