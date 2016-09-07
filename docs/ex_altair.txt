@@ -1,0 +1,28 @@
+# Altair
+
+[Altair](https://github.com/ellisonbg/altair) is a declarative statistical visualization library for python.
+
+This document can be compiled to html with
+
+    ```
+    stitch ex_altair.txt -o ex_altair.html --no-self-contained
+    ```
+
+```{python}
+from altair import Chart, load_dataset
+from IPython import display
+
+# load data as a pandas DataFrame
+cars = load_dataset('cars')
+
+c = Chart(cars).mark_point().encode(
+    x='Horsepower',
+    y='Miles_per_Gallon',
+    color='Origin'
+)
+c
+```
+
+```{python}
+display.HTML(c.to_html())
+```

@@ -1,0 +1,51 @@
+# Holoviews
+
+
+[HoloViews](http://holoviews.org) is a Python library that makes analyzing and visualizing scientific or engineering data much simpler, more intuitive, and more easily reproducible.
+
+This document can be compiled to HTML with
+
+    ```
+    stitch ex_holoviews.txt -o ex_holoviews.html --no-self-contained -H header.js
+    ```
+
+You'll need a file ``header.js`` with the required javascript libraries.
+
+    ```
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.1/require.min.js"></script>
+    ```
+
+```{python}
+import numpy as np
+import holoviews as hv
+from IPython import display
+hv.notebook_extension()
+```
+
+```{python}
+def sine(x, phase=0, freq=100):
+    return np.sin((freq * x + phase))
+
+phases = np.linspace(0,2*np.pi,11) # Explored phases
+freqs = np.linspace(50,150,5)      # Explored frequencies
+
+dist = np.linspace(-0.5,0.5,202)   # Linear spatial sampling
+x,y = np.meshgrid(dist, dist)
+grid = (x**2+y**2)                 # 2D spatial sampling
+```
+
+```{python}
+freq1 = hv.Image(sine(grid, freq=50))  + hv.Curve(zip(dist, sine(dist**2, freq=50)))
+freq2 = hv.Image(sine(grid, freq=200)) + hv.Curve(zip(dist, sine(dist**2, freq=200)))
+(freq1 + freq2).cols(2)
+```
+
+```{python}
+dimensions = ['Phase', 'Frequency']
+keys = [(p,f) for p in phases for f in freqs]
+
+items = [(k, hv.Image(sine(grid, *k), vdims=['Amplitude'])) for k in keys]
+circular_wave = hv.HoloMap(items, kdims=dimensions)
+circular_wave
+```

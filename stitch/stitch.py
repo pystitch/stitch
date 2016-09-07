@@ -309,8 +309,10 @@ class Stitch(HasTraits):
                 text = message['content']['text']
                 output_blocks.append(plain_output(text))
 
+        priority = list(enumerate(NbConvertBase().display_data_priority))
+        priority.append((len(priority), 'application/javascript'))
         order = dict(
-            (x[1], x[0]) for x in enumerate(NbConvertBase().display_data_priority)
+            (x[1], x[0]) for x in priority
         )
 
         for message in display_messages:
@@ -337,6 +339,9 @@ class Stitch(HasTraits):
                     block = RawBlock('latex', data)
                 elif key == 'text/html':
                     block = RawBlock('html', data)
+                elif key == 'application/javascript':
+                    script = '<script type=text/javascript>{}</script>'.format(data)
+                    block = RawBlock('html', script)
                 elif key.startswith('image') or key == 'application/pdf':
                     block = self.wrap_image_output(chunk_name, data, key, attrs)
                 else:

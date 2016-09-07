@@ -47,12 +47,24 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
 
-.PHONY: clean
+.PHONY: clean, examples
 clean:
 	rm -rf $(BUILDDIR)/*
 
+
+examples: ex_bokeh.html ex_altair.html ex_holoviews.html
+
+ex_bokeh.html:
+	stitch ex_bokeh.txt -o ex_bokeh.html --no-self-contained
+
+ex_altair.html:
+	stitch ex_altair.txt -o ex_altair.html --no-self-contained
+
+ex_holoviews.html:
+	stitch ex_holoviews.txt -o ex_holoviews.html --no-self-contained -H header.js
+
 .PHONY: html
-html:
+html: examples
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

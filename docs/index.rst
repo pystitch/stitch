@@ -125,6 +125,7 @@ Contents:
    :maxdepth: 2
 
    self
+   integration
    api
    whatsnew
 
