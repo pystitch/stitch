@@ -31,6 +31,5 @@ script:
   - "py.test tests --cov=stitch --cov-report html --run-slow tests/"
   - cd docs
   - make html
-  - cd ..
-  - doctr deploy
+  - doctr deploy --built-docs '_build/html' --gh-pages-docs .
 
