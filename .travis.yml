@@ -2,6 +2,10 @@ language: python
 python:
   - 3.5
 
+env:
+  global:
+    - secure: "wUVS5veZpUkxUlfpcZu1/TGl7VaorgrmRKSskTpF65H6y6N6tfEFcJX2rxia+ay8byLt+EjyyYRqXVi2LsWq8Il23hOuRcUGdg6itd54KXiZEQOAk1EcXWOcL7kclP/CKtcTE3esiiDzRHip4yd5xde39CdPy2apbh6J95kfQJyRR2XmjxyXa7mj1kjvNn5nHxOno/lWcI/VSQTNoLljFgffB79tVw9Oc3QqP4D9NfPkZtppi7xo5mTToSv7zb590o1p8+3MxGem3n5gMyq5gp7iM2tpQe7hiedpTsbHYAKUjh7TVLAxhWaIV5CRH4tquHA4LBc31W/ZwIBf2eMjRsG3mP29ksBNBoTOzULEgGg8raVkfH4rS6YNKHX1q7MBRMyipPka++vStX8sK/vlBnVCOisOGIGZzDCoQAXMrCeOXdMxbY1MIdp+h4b3WW2HG5Rc4MsEcIkCk+FxBwrQZBxYJl24UeWk5MjKHbDprsOhGpBoD6NRfcS1RpugExf3jAr3prPZo+JU8yfaAxJTu8qm67xLEE2D/fNkKllJc4r046Xj4cZM9k157jQMSlL0FXMpWMCtQYfxJTLbbCF9I5ej4O+J49BhaQQnnBX9pXVi93UxW+qSfLRMkH7PasoNuqcQK6OHyiSOrv7t5U8qyfScEWgrGTTsHg4z/cn+zXg="
+
 notifications:
   email: false
 
@@ -17,7 +21,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION ipython pypandoc jupyter_core jupyter_client jupyter notebook matplotlib pandas
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION ipython pypandoc jupyter_core jupyter_client jupyter notebook matplotlib pandas doctr sphinx_rtd_theme bokeh holoviews altair numpydoc
   - source activate test-environment
   - jupyter kernelspec list
   - pip install -e .[dev]
@@ -25,3 +29,8 @@ install:
 # Run test
 script:
   - "py.test tests --cov=stitch --cov-report html --run-slow tests/"
+  - cd docs
+  - make html
+  - cd ..
+  - doctr deploy
+
