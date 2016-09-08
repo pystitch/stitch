@@ -50,18 +50,16 @@ help:
 .PHONY: clean, examples
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm *.html
 
 
-examples: ex_bokeh.html ex_altair.html ex_holoviews.html
+examples: ex_bokeh.html ex_altair.html
 
 ex_bokeh.html:
 	stitch ex_bokeh.txt -o ex_bokeh.html --no-self-contained
 
 ex_altair.html:
 	stitch ex_altair.txt -o ex_altair.html --no-self-contained
-
-ex_holoviews.html:
-	stitch ex_holoviews.txt -o ex_holoviews.html --no-self-contained -H header.js
 
 .PHONY: html
 html: examples
