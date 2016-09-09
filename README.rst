@@ -25,6 +25,7 @@ More complex examples are linked to from there as well.
 Install
 =======
 
+``stitch`` supports Python 3.5 and above.
 At the moment ``stitch`` can be installed from pip via
 
 .. code-block:: sh
