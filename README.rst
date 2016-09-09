@@ -3,8 +3,6 @@ Stitch
 
 |Build Status|
 
-|Documentation Status|
-
 A `knitr <http://yihui.name/knitr/>`__- `RMarkdown <http://rmarkdown.rstudio.com>`__-like library, in Python.
 
 *Note:* You might want to consider Jan Schulz's `knitpy <https://github.com/janschulz/knitpy/>`__
@@ -14,12 +12,12 @@ to see if there was a simpler way of doing things.
 The high-level goal of this type of library (knitr/RMarkdown, knitpy, and stitch) is to make writing
 reproducible reports easier.
 
-Documentation is available on `readthedocs <http://stitch.readthedocs.io>`__.
+Documentation is available `here <https://pystitch.github.io>`__.
 
 Examples
 ========
 
-See the project's `website <https://pystitch.github.io>`__ for a
+See the project's `examples page <https://pystitch.github.io/_downloads/side_by_side.html>`__ for a
 side-by-side comparison of input markdown and stitched HTML.
 
 More complex examples are linked to from there as well.
@@ -75,8 +73,17 @@ This saves us from having do any kind of custom parsing of the markdown.
 The only drawback so far is somewhat inscrutable Haskell exceptions if
 ``stitch`` happens to produce a bad document.
 
+Documentation
+=============
+
+Stitch's documentation has an odd build process, so standard tools like
+readthedocs weren't flexible enough.
+To make the docs, install stitch and all the extra dependencies.
+Clone https://github.com/pystitch/pystitch.github.io
+
+Checkout the `src` branch.
+
+Run `make html`.
+
 .. |Build Status| image:: https://travis-ci.org/pystitch/stitch.svg?branch=master
    :target: https://travis-ci.org/pystitch/stitch
-
-.. |Documentation Status| image:: https://readthedocs.org/projects/stitch/badge/?version=latest
-   :target: http://stitch.readthedocs.io/en/latest/?badge=latest
