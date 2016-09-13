@@ -1,3 +1,2 @@
 class StitchError(Exception):
     pass
-

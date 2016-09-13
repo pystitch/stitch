@@ -73,6 +73,14 @@ def preprocess_options(options_line):
     Transform a code-chunk options line to allow
     ``{python, arg, kwarg=val}`` instead of pandoc-style
     ``{.python .arg kwarg=val}``.
+
+    Parameters
+    ----------
+    options_line: str
+
+    Returns
+    -------
+    transformed: str
     """
     tok = tokenize(options_line)
 

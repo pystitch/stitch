@@ -36,10 +36,10 @@ CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
 
 
 class _Fig(HasTraits):
-    '''
+    """
     Sub-traitlet for fig related options.
     Traitlets all the way down.
-    '''
+    """
 
     width = opt.Str(None)
     height = opt.Str(None)
@@ -49,8 +49,9 @@ class _Fig(HasTraits):
 # User API
 # --------
 
+
 class Stitch(HasTraits):
-    '''
+    """
     Helper class for managing the execution of a document.
     Stores configuration variables.
 
@@ -91,7 +92,7 @@ class Stitch(HasTraits):
     -----
     Attirbutes can be set via the command-line, document YAML metadata,
     or (where appropriate) the chunk-options line.
-    '''
+    """
 
     # Document-traits
     to = opt.Str('html')
@@ -115,7 +116,7 @@ class Stitch(HasTraits):
                  warning=True,
                  error='continue',
                  prompt=None):
-        '''
+        """
         Parameters
         ----------
         name : str
@@ -128,18 +129,13 @@ class Stitch(HasTraits):
             whether to include warnings (stderr) in the ouput.
         error : ``{"continue", "raise"}``
             how to handle errors in the code being executed.
-        '''
+        """
+        super().__init__(to=to, standalone=standalone,
+                         self_contained=self_contained, warning=warning,
+                         error=error, prompt=prompt)
         self._kernel_pairs = {}
         self.name = name
-        self.to = to
         self.resource_dir = self.name_resource_dir(name)
-
-        self.standalone = standalone
-        self.self_contained = self_contained
-        self.warning = warning
-
-        self.error = error
-        self.prompt = prompt
 
     def __getattr__(self, attr):
         if '.' in attr:
@@ -171,21 +167,21 @@ class Stitch(HasTraits):
 
     @staticmethod
     def name_resource_dir(name):
-        '''
+        """
         Give the directory name for supporting resources
-        '''
+        """
         return '{}_files'.format(name)
 
     @property
     def kernel_managers(self):
-        '''
+        """
         dict of KernelManager, KernelClient pairs, keyed by
         kernel name.
-        '''
+        """
         return self._kernel_pairs
 
     def get_kernel(self, kernel_name):
-        '''
+        """
         Get a kernel from ``kernel_managers`` by ``kernel_name``,
         creating it if needed.
 
@@ -196,7 +192,7 @@ class Stitch(HasTraits):
         Returns
         -------
         kp : KernelPair
-        '''
+        """
         kp = self.kernel_managers.get(kernel_name)
         if not kp:
             kp = kernel_factory(kernel_name)
@@ -210,15 +206,15 @@ class Stitch(HasTraits):
         return attrs.get(option, getattr(self, option))
 
     def parse_document_options(self, meta):
-        '''
+        """
         Modifies self to update options, depending on the document.
-        '''
+        """
         for attr, val in meta['unMeta'].items():
             if self.has_trait(attr):
                 self.set_trait(attr, val)
 
     def stitch(self, source):
-        '''
+        """
         Main method for converting a document.
 
         Parameters
@@ -230,7 +226,7 @@ class Stitch(HasTraits):
         -------
         meta, blocks : list
             These should be compatible with pando's JSON AST
-        '''
+        """
         source = preprocess(source)
         meta, blocks = tokenize(source)
 
@@ -265,21 +261,19 @@ class Stitch(HasTraits):
             # ... and output formatting
             if is_stitchable(messages, attrs):
                 result = self.wrap_output(
-                    name, messages, execution_count, self.to, attrs,
+                    name, messages, attrs,
                 )
                 new_blocks.extend(result)
         return meta, new_blocks
 
-    def wrap_output(self, chunk_name, messages, execution_count, kp, attrs):
-        '''
+    def wrap_output(self, chunk_name, messages, attrs):
+        """
         Wrap the messages of a code-block.
 
         Parameters
         ----------
         chunk_name : str
         messages : list of dicts
-        execution_count : int or None
-        kp : KernelPair
         attrs : dict
             options from the source options-line.
 
@@ -295,7 +289,7 @@ class Stitch(HasTraits):
         ``NbConvertBase.display_data_priority``.
 
         The result should be pandoc JSON AST compatible.
-        '''
+        """
         # messsage_pairs can come from stdout or the io stream (maybe others?)
         output_messages = [x for x in messages if not is_execute_input(x)]
         display_messages = [x for x in output_messages if not is_stdout(x) and
@@ -322,7 +316,9 @@ class Stitch(HasTraits):
                 if error == 'raise':
                     exc = StitchError(message['content']['traceback'])
                     raise exc
-                block = plain_output('\n'.join(message['content']['traceback']))
+                block = plain_output(
+                    '\n'.join(message['content']['traceback'])
+                )
             else:
                 all_data = message['content']['data']
                 key = min(all_data.keys(), key=lambda k: order[k])
@@ -341,10 +337,12 @@ class Stitch(HasTraits):
                 elif key == 'text/html':
                     block = RawBlock('html', data)
                 elif key == 'application/javascript':
-                    script = '<script type=text/javascript>{}</script>'.format(data)
+                    script = '<script type=text/javascript>{}</script>'.format(
+                        data)
                     block = RawBlock('html', script)
                 elif key.startswith('image') or key == 'application/pdf':
-                    block = self.wrap_image_output(chunk_name, data, key, attrs)
+                    block = self.wrap_image_output(chunk_name, data, key,
+                                                   attrs)
                 else:
                     block = tokenize_block(data)
 
@@ -352,7 +350,7 @@ class Stitch(HasTraits):
         return output_blocks
 
     def wrap_image_output(self, chunk_name, data, key, attrs):
-        '''
+        """
         Extra handling for images
 
         Parameters
@@ -363,11 +361,11 @@ class Stitch(HasTraits):
         Returns
         -------
         Para[Image]
-        '''
+        """
         # TODO: interaction of output type and standalone.
         # TODO: this can be simplified, do the file-writing in one step
         def b64_encode(data):
-            return base64.encodestring(data.encode('ascii')).decode('ascii')
+            return base64.encodebytes(data.encode('ascii')).decode('ascii')
 
         # TODO: dict of attrs on Stitcher.
         image_keys = {'width', 'height'}
@@ -403,7 +401,7 @@ class Stitch(HasTraits):
                     f.write(data)
             else:
                 with open(filepath, 'wb') as f:
-                    f.write(base64.decodestring(data.encode('utf-8')))
+                    f.write(base64.decodebytes(data.encode('utf-8')))
             # Image :: alt text (list of inlines), target
             # Image :: Attr [Inline] Target
             # Target :: (string, string)  of (URL, title)
@@ -528,9 +526,9 @@ def is_stitchable(result, attrs):
 # Formatting
 # ----------
 def format_input_prompt(prompt, code, number):
-    '''
+    """
     Format the actual input code-text.
-    '''
+    """
     if prompt is None:
         return format_ipython_prompt(code, number)
     lines = code.split('\n')
@@ -698,13 +696,14 @@ def execute_block(block, kp, timeout=None):
 
 
 def run_code(code: str, kp: KernelPair, timeout=None):
-    '''
+    """
     Execute a code chunk, capturing the output.
 
     Parameters
     ----------
     code : str
     kp : KernelPair
+    timeout : int
 
     Returns
     -------
@@ -714,14 +713,14 @@ def run_code(code: str, kp: KernelPair, timeout=None):
     -----
     See https://github.com/jupyter/nbconvert/blob/master/nbconvert
       /preprocessors/execute.py
-    '''
+    """
     msg_id = kp.kc.execute(code)
     while True:
         try:
             msg = kp.kc.shell_channel.get_msg(timeout=timeout)
         except Empty:
             # TODO: Log error
-            pass
+            raise
 
         if msg['parent_header'].get('msg_id') == msg_id:
             break
@@ -768,8 +767,8 @@ def run_code(code: str, kp: KernelPair, timeout=None):
 
 
 def extract_execution_count(messages):
-    '''
-    '''
+    """
+    """
     for message in messages:
         count = message['content'].get('execution_count')
         if count is not None:

@@ -2,6 +2,7 @@ import pytest
 from textwrap import dedent
 from stitch.stitch import Stitch
 
+
 @pytest.fixture
 def doc_meta():
     data = {'date': '2016-01-01', 'title': 'My Title', 'author': 'Jack',
@@ -65,6 +66,7 @@ class TestOptions:
         expected = meta[key]
         assert result == expected
 
+
 @pytest.mark.slow
 class TestOptionsKernel:
 
@@ -78,6 +80,3 @@ class TestOptionsKernel:
         meta, blocks = s.stitch(code)
         result = blocks[-1]['c'][0]['c'][1][0]['c']
         assert result == 'This is a caption'
-
-
-

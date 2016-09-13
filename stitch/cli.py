@@ -15,7 +15,8 @@ def infer_format(output_file):
 
 
 def has_css(extra_args):
-    return '-c' in extra_args or '--css' in [a.split('=')[0] for a in extra_args]
+    return '-c' in extra_args or '--css' in [a.split('=')[0] for a in
+                                             extra_args]
 
 
 def has_booktabs(extra_args):
@@ -23,6 +24,7 @@ def has_booktabs(extra_args):
         '='.join(a.split('=')[1:])
         for a in extra_args
     ]
+
 
 def enhance_args(to, no_standalone, no_self_contained, extra_args):
     extra_args = extra_args.copy()

@@ -45,6 +45,7 @@ def clean_stdout():
     yield
     shutil.rmtree('std_out_files')
 
+
 @pytest.fixture
 def document_path():
     "Path to a markdown document"
@@ -62,7 +63,8 @@ def document():
 @pytest.fixture
 def as_json(document):
     "JSON representation of the markdown document"
-    return json.loads(pypandoc.convert_text(document, 'json', format='markdown'))
+    return json.loads(pypandoc.convert_text(document, 'json',
+                                            format='markdown'))
 
 
 @pytest.fixture(params=['python', 'R'], ids=['python', 'R'])
@@ -155,7 +157,8 @@ class TestKernelArgs:
     @pytest.mark.parametrize('block, expected', [
         ({'t': 'CodeBlock', 'c': [['', ['python'], []], 'foo']}, 'python'),
         ({'t': 'CodeBlock', 'c': [['', ['ir'], ['foo']], 'foo']}, 'ir'),
-        ({'t': 'CodeBlock', 'c': [['', ['ir'], [['foo', 'bar']]], 'foo']}, 'ir'),
+        ({'t': 'CodeBlock', 'c': [['', ['ir'], [['foo', 'bar']]], 'foo']},
+         'ir'),
     ])
     def test_extract_kernel_name(self, block, expected):
         result = R.extract_kernel_name(block)
@@ -422,7 +425,7 @@ class TestIntegration:
         display.Markdown("$\\alpha^{pi:1.3f}$".format(pi=math.pi))
         ''')
         messages = R.run_code(code, clean_python_kernel)
-        wrapped = s.wrap_output('', messages, None, clean_python_kernel, {})[0]
+        wrapped = s.wrap_output('', messages, None)[0]
         assert wrapped['t'] == 'Para'
         assert wrapped['c'][0]['c'][0]['t'] == 'InlineMath'
 
@@ -473,8 +476,10 @@ class TestKernel:
 
     def test_init_python_latex(self, clean_python_kernel):
         R.initialize_kernel('python', clean_python_kernel)
-        result = R.run_code('assert pandas.options.display.latex.repr is False',
-                            clean_python_kernel)
+        result = R.run_code(
+            'assert pandas.options.display.latex.repr is False',
+            clean_python_kernel
+        )
         assert len(result) == 2
 
 
@@ -504,4 +509,3 @@ class TestStitcher:
         assert s.has_trait('fig.width')
         assert not s.has_trait('fake.width')
         assert not s.has_trait('fig.fake')
-
