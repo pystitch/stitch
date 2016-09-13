@@ -23,6 +23,7 @@ import pypandoc
 
 from .exc import StitchError
 from . import options as opt
+from .parser import preprocess_options
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
 CODE = 'code'
@@ -584,11 +585,6 @@ def tokenize(source: str) -> dict:
 def tokenize_block(source):
     return tokenize(source)[1][0]
 
-def validate_options(options_line):
-    xpr = re.compile(r'^```{\w+.*}')
-    if not xpr.match(options_line):
-        raise TypeError("Invalid chunk options %s" % options_line)
-
 
 def preprocess(source: str) -> str:
     """
@@ -621,50 +617,6 @@ def preprocess(source: str) -> str:
         else:
             doc.append(line)
     return '\n'.join(doc)
-
-
-def _transform(kind, text):
-    if kind == 'ARG':
-        result = '.' + text
-    elif kind in ('DELIM' 'BLANK'):
-        result = None
-    elif kind in ('OPEN', 'CLOSE', 'KWARG'):
-        return text
-    else:
-        raise TypeError('Unknown kind %s' % kind)
-    return result
-
-
-def preprocess_options(options_line):
-    """
-    Transform a code-chunk options line to allow
-    ``{python, arg, kwarg=val}`` instead of pandoc-style
-    ``{.python .arg kwarg=val}``.
-    """
-    # See Python Cookbook 3rd Ed p 67
-    KWARG = r'(?P<KWARG>\S+ *= *[^,]+)'
-    ARG = r'(?P<ARG>\w+)'
-    DELIM = r'(?P<DELIM> *, *)'
-    BLANK = r'(?P<BLANK>\s+)'
-    OPEN = r'(?P<OPEN>```{ *)'
-    CLOSE = r'(?P<CLOSE>})'
-
-    Token = namedtuple("Token", ['kind', 'value'])
-    master_pat = re.compile('|'.join([KWARG, ARG, DELIM, OPEN,
-                                      CLOSE, BLANK]))
-
-    def generate_tokens(pat, text):
-        scanner = pat.scanner(text)
-        for m in iter(scanner.match, None):
-            yield Token(m.lastgroup, m.group())
-
-    tok = list(generate_tokens(master_pat, options_line))
-
-    items = (_transform(kind, text) for kind, text in tok)
-    items = filter(None, items)
-    items = ' '.join(items)
-    result = items.replace('{ ', '{').replace(' }', '}').replace(" {", "{")
-    return result
 
 
 def parse_kernel_arguments(block):

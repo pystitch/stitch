@@ -82,45 +82,6 @@ def python_kp():
     return R.kernel_factory('python')
 
 
-class TestPreProcessor:
-
-    @pytest.mark.parametrize('options, expected', [
-        ('```{python}', '```{.python}'),
-        ('```{r, name}', '```{.r .name}'),
-        ('```{r, echo=True}', '```{.r echo=True}'),
-        ('```{r, name, echo=True, eval=False}', '```{.r .name echo=True eval=False}'),
-    ])
-    def test_preprocess(self, options, expected):
-        R.validate_options(options)
-        result = R.preprocess_options(options)
-        assert result == expected
-
-    @pytest.mark.parametrize('options', [
-        # '```{r name foo=bar}''',  # bad comma
-        # '```{r foo=bar}'''        # no comma
-        '```{r, foo=bar'''        # no curly
-    ])
-    def test_preprocess_raises(self, options):
-        with pytest.raises(TypeError):
-            R.validate_options(options)
-
-    @pytest.mark.parametrize('kind,text,expected', [
-        ("ARG", "r", ".r"),
-        ("DELIM", ",", None),
-        ("BLANK", " ", None),
-        ("OPEN", "```{", "```{"),
-        ("CLOSE", "}", "}"),
-        ("KWARG", "foo=bar", "foo=bar"),
-    ])
-    def test_transfrom_args(self, kind, text, expected):
-        result = R._transform(kind, text)
-        assert result == expected
-
-    def test_transform_raises(self):
-        with pytest.raises(TypeError):
-            R._transform('fake', 'foo')
-
-
 class TestTesters:
 
     @pytest.mark.parametrize('block, expected', [
