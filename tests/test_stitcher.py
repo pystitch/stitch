@@ -511,6 +511,7 @@ class TestStitcher:
         assert not s.has_trait('fake.width')
         assert not s.has_trait('fig.fake')
 
+
 def test_empty_message():
     # GH 52
     messages = [

@@ -7,6 +7,29 @@ import re
 from collections import namedtuple
 
 Token = namedtuple("Token", ['kind', 'value'])
+_DEFAULT = 'default'
+_SIMPLE = 'simple'
+_PARSER_STYLES = {_DEFAULT, _SIMPLE}
+
+
+def is_chunk_options(line, chunk_style):
+    """
+    Test for whether an input line is a code-chunk options line
+
+    Parameters
+    ----------
+    line : str
+    chunk_stye : {'default', 'simple'}
+
+    Returns
+    -------
+    is_chunk_options : bool
+    """
+    if chunk_style == _DEFAULT:
+        xpr = r'^```{\w+.*}'
+    else:
+        xpr = r'^```\w+'
+    return re.match(xpr, line)
 
 
 def validate_options(options_line):
@@ -27,7 +50,7 @@ def _transform(kind, text):
     return result
 
 
-def tokenize(options_line):
+def tokenize(options_line, style='default'):
     """
     Break an options line into a list of tokens.
 
@@ -51,10 +74,18 @@ def tokenize(options_line):
     """
     KWARG = r'(?P<KWARG>([^,=]+ *)= *(".*"|\'.*\'|[^,=}]+))'
     ARG = r'(?P<ARG>\w+)'
-    OPEN = r'(?P<OPEN>```{ *)'
     DELIM = r'(?P<DELIM> *, *)'
-    CLOSE = r'(?P<CLOSE>})'
     BLANK = r'(?P<BLANK>\s+)'
+    if style == _DEFAULT:
+        OPEN = r'(?P<OPEN>```{ *)'
+        CLOSE = r'(?P<CLOSE>})'
+    elif style == _SIMPLE:
+        OPEN = r'(?P<OPEN>``` *)'
+        CLOSE = r'(?P<CLOSE>\n)'
+    else:
+        msg = 'style must be one of {}, got {}s instead'.format(_PARSER_STYLES,
+                                                                style)
+        raise TypeError(msg)
 
     master_pat = re.compile('|'.join([KWARG, ARG, OPEN, DELIM,
                                       CLOSE, BLANK]))
@@ -65,10 +96,16 @@ def tokenize(options_line):
             yield Token(m.lastgroup, m.group(m.lastgroup))
 
     tok = list(generate_tokens(master_pat, options_line))
+    if style == _SIMPLE:
+        first, *rest = tok
+        assert first.kind == 'OPEN'
+        tok = [Token("OPEN", "```{")] + rest
+    if style == _SIMPLE:
+        tok.append(Token('CLOSE', "}"))
     return tok
 
 
-def preprocess_options(options_line):
+def preprocess_options(options_line, style):
     """
     Transform a code-chunk options line to allow
     ``{python, arg, kwarg=val}`` instead of pandoc-style
@@ -82,7 +119,7 @@ def preprocess_options(options_line):
     -------
     transformed: str
     """
-    tok = tokenize(options_line)
+    tok = tokenize(options_line, style)
 
     items = (_transform(kind, text) for kind, text in tok)
     items = filter(None, items)

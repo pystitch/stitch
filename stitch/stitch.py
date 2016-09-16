@@ -7,7 +7,6 @@ in the output.
 # Copyright (c) IPython Development Team.
 # Distributed under the terms of the Modified BSD License.
 import os
-import re
 import copy
 import json
 import base64
@@ -15,6 +14,7 @@ import mimetypes
 from collections import namedtuple
 from queue import Empty
 
+from yaml import load_all, YAMLError
 from traitlets import HasTraits
 from jupyter_client.manager import start_new_kernel
 from nbconvert.utils.base import NbConvertBase
@@ -23,7 +23,9 @@ import pypandoc
 
 from .exc import StitchError
 from . import options as opt
-from .parser import preprocess_options
+from .parser import (
+    preprocess_options, is_chunk_options, _DEFAULT, _PARSER_STYLES
+)
 
 DISPLAY_PRIORITY = NbConvertBase().display_data_priority
 CODE = 'code'
@@ -32,7 +34,6 @@ OUTPUT_FORMATS = ['html', 'latex']
 HERE = os.path.dirname(__file__)
 
 KernelPair = namedtuple("KernelPair", "km kc")
-CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
 
 
 class _Fig(HasTraits):
@@ -109,6 +110,7 @@ class Stitch(HasTraits):
     echo = opt.Bool(True)
     eval = opt.Bool(True)
     fig = _Fig()
+    chunk_style = opt.Choice(_PARSER_STYLES, default_value=_DEFAULT)
 
     def __init__(self, name, to='html',
                  standalone=True,
@@ -227,9 +229,15 @@ class Stitch(HasTraits):
         meta, blocks : list
             These should be compatible with pando's JSON AST
         """
-        source = preprocess(source)
+        # bootstrapping problem here, need to know parser_style setting,
+        # to preprocess. This probably indicates a design flaw...
+        try:
+            yaml = next(load_all(source))
+        except YAMLError:
+            yaml = {}
+        self.chunk_style = yaml.get('chunk_style', _DEFAULT)
+        source = preprocess(source, self.chunk_style)
         meta, blocks = tokenize(source)
-
         self.parse_document_options(meta)
         new_blocks = []
 
@@ -586,13 +594,14 @@ def tokenize_block(source):
     return tokenize(source)[1][0]
 
 
-def preprocess(source: str) -> str:
+def preprocess(source: str, chunk_style) -> str:
     """
     Process a source file prior to tokenezation.
 
     Parameters
     ----------
     source : str
+    chunk_style : {'default', 'simple'}
 
     Returns
     -------
@@ -612,8 +621,8 @@ def preprocess(source: str) -> str:
     """
     doc = []
     for line in source.split('\n'):
-        if CODE_CHUNK_XPR.match(line):
-            doc.append(preprocess_options(line))
+        if is_chunk_options(line, chunk_style):
+            doc.append(preprocess_options(line, chunk_style))
         else:
             doc.append(line)
     return '\n'.join(doc)

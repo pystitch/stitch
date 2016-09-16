@@ -6,21 +6,35 @@ from stitch.parser import Token
 
 class TestParser:
 
-    @pytest.mark.parametrize('options, expected', [
-        ('```{python}', '```{.python}'),
-        ('```{r, name}', '```{.r .name}'),
-        ('```{r, echo=True}', '```{.r echo=True}'),
-        ('```{r, name, echo=True, eval=False}',
+    @pytest.mark.parametrize('options, style, expected', [
+        ('```{python}', 'default', '```{.python}'),
+        ('```{r, name}', 'default', '```{.r .name}'),
+        ('```{r, echo=True}', 'default', '```{.r echo=True}'),
+        ('```{r, name, echo=True, eval=False}', 'default',
          '```{.r .name echo=True eval=False}'),
-        ('```{r, fig.cap="Caption"}', '```{.r fig.cap="Caption"}'),
-        ('```{r, fig.cap="Cap, 2", echo=True}',
+        ('```{r, fig.cap="Caption"}', 'default', '```{.r fig.cap="Caption"}'),
+        ('```{r, fig.cap="Cap, 2", echo=True}', 'default',
          '```{.r fig.cap="Cap, 2" echo=True}'),
-        ('```{r, echo=True, fig.cap="Cap, 2"}',
+        ('```{r, echo=True, fig.cap="Cap, 2"}', 'default',
          '```{.r echo=True fig.cap="Cap, 2"}'),
-        ('```{r, fig.cap="Caption, too"}', '```{.r fig.cap="Caption, too"}'),
+        ('```{r, fig.cap="Caption, too"}', 'default',
+         '```{.r fig.cap="Caption, too"}'),
+        # simple
+        ('```python', 'simple', '```{.python}'),
+        ('```r, name', 'simple', '```{.r .name}'),
+        ('```r, echo=True', 'simple', '```{.r echo=True}'),
+        ('```r, name, echo=True, eval=False', 'simple',
+         '```{.r .name echo=True eval=False}'),
+        ('```r, fig.cap="Caption"', 'simple', '```{.r fig.cap="Caption"}'),
+        ('```r, fig.cap="Cap, 2", echo=True', 'simple',
+         '```{.r fig.cap="Cap, 2" echo=True}'),
+        ('```r, echo=True, fig.cap="Cap, 2"', 'simple',
+         '```{.r echo=True fig.cap="Cap, 2"}'),
+        ('```r, fig.cap="Caption, too"', 'simple',
+         '```{.r fig.cap="Caption, too"}'),
     ])
-    def test_preprocess(self, options, expected):
-        result = P.preprocess_options(options)
+    def test_preprocess(self, options, style, expected):
+        result = P.preprocess_options(options, style)
         assert result == expected
 
     def test_tokenize(self):
@@ -75,3 +89,23 @@ class TestParser:
     def test_transform_raises(self):
         with pytest.raises(TypeError):
             P._transform('fake', 'foo')
+
+    @pytest.mark.parametrize('line, style, expected', [
+        ('this is a line', P._DEFAULT, False),
+        ('```python', P._DEFAULT, False),
+        ('```{python}', P._DEFAULT, True),
+        ('```{python, name}', P._DEFAULT, True),
+        ('```{python, name, key=val}', P._DEFAULT, True),
+        ('this is a line', P._SIMPLE, False),
+        ('```python', P._SIMPLE, True),
+        ('```{python}', P._SIMPLE, False),
+        ('```{python, name}', P._SIMPLE, False),
+        ('```{python, name, key=val}', P._SIMPLE, False),
+    ])
+    def test_is_chunk(self, line, style, expected):
+        result = P.is_chunk_options(line, style)
+        assert bool(result) is expected
+
+    def test_tokenize_raises(self):
+        with pytest.raises(TypeError):
+            P.tokenize('{python}', 'Fake')
