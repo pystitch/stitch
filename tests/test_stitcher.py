@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import shutil
+import datetime
 from textwrap import dedent
 
 import pytest
@@ -509,3 +510,22 @@ class TestStitcher:
         assert s.has_trait('fig.width')
         assert not s.has_trait('fake.width')
         assert not s.has_trait('fig.fake')
+
+def test_empty_message():
+    # GH 52
+    messages = [
+        {'parent_header': {
+            'username': 't', 'session': 'a',
+            'msg_type': 'execute_request', 'msg_id': '3',
+            'date': datetime.datetime(2016, 9, 27, 7, 20, 13, 790481),
+            'version': '5.0'
+        }, 'metadata': {}, 'buffers': [], 'msg_type': 'display_data',
+           'header': {'username': 't', 'session': 'a',
+                      'msg_type': 'display_data', 'version': '5.0',
+                      'date': '2016-09-27T07:20:17.461893',
+                      'msg_id': '6'},
+           'content': {'metadata': {}, 'data': {}}, 'msg_id': '6'}
+    ]
+    s = R.Stitch('foo')
+    result = s.wrap_output('bar', messages, {})
+    assert result == []
