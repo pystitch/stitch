@@ -321,6 +321,8 @@ class Stitch(HasTraits):
                 )
             else:
                 all_data = message['content']['data']
+                if not all_data:  # some R output
+                    continue
                 key = min(all_data.keys(), key=lambda k: order[k])
                 data = all_data[key]
 
