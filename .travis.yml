@@ -5,6 +5,9 @@ python:
 notifications:
   email: false
 
+git:
+  submodules: false
+
 # Install packages
 install:
   - sudo apt-get update
