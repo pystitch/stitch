@@ -209,7 +209,7 @@ class Stitch(HasTraits):
         """
         Modifies self to update options, depending on the document.
         """
-        for attr, val in meta['unMeta'].items():
+        for attr, val in meta.items():
             if self.has_trait(attr):
                 self.set_trait(attr, val)
 
@@ -224,11 +224,18 @@ class Stitch(HasTraits):
 
         Returns
         -------
-        meta, blocks : list
+        doc : dict
             These should be compatible with pando's JSON AST
+            It's a dict with keys
+              - pandoc-api-version
+              - meta
+              - blocks
         """
         source = preprocess(source)
-        meta, blocks = tokenize(source)
+        ast = tokenize(source)
+        version = ast['pandoc-api-version']
+        meta = ast['meta']
+        blocks = ast['blocks']
 
         self.parse_document_options(meta)
         new_blocks = []
@@ -264,7 +271,10 @@ class Stitch(HasTraits):
                     name, messages, attrs,
                 )
                 new_blocks.extend(result)
-        return meta, new_blocks
+        result = {'pandoc-api-version': version,
+                  'meta': meta,
+                  'blocks': new_blocks}
+        return result
 
     def wrap_output(self, chunk_name, messages, attrs):
         """
@@ -463,8 +473,8 @@ def convert(source: str, to: str, extra_args=(),
     self_contained = '--self-contained' in extra_args
     stitcher = Stitch(name=output_name, to=to, standalone=standalone,
                       self_contained=self_contained)
-    meta, blocks = stitcher.stitch(source)
-    result = json.dumps([meta, blocks])
+    result = stitcher.stitch(source)
+    result = json.dumps(result)
     newdoc = pypandoc.convert_text(result, to, format='json',
                                    extra_args=extra_args,
                                    outputfile=output_file)
@@ -583,7 +593,7 @@ def tokenize(source: str) -> dict:
 
 
 def tokenize_block(source):
-    return tokenize(source)[1][0]
+    return tokenize(source)['blocks'][0]
 
 
 def preprocess(source: str) -> str:

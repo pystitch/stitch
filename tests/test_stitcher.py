@@ -306,7 +306,8 @@ class TestIntegration:
         ```
         ''')
         result = R.Stitch('foo', to=to).stitch(code)
-        assert result[1][1]['c'][0]['t'] == 'Image'
+        blocks = result['blocks']
+        assert blocks[1]['c'][0]['t'] == 'Image'
 
     def test_image_chunkname(self):
         code = dedent('''\
@@ -317,7 +318,8 @@ class TestIntegration:
         ```
         ''')
         result = R.Stitch('foo', to='pdf', standalone=False).stitch(code)
-        assert 'chunk' in result[1][1]['c'][0]['c'][0][0]
+        blocks = result['blocks']
+        assert 'chunk' in blocks[1]['c'][0]['c'][0][0]
 
     def test_image_attrs(self):
         code = dedent('''\
@@ -328,7 +330,8 @@ class TestIntegration:
         ```
         ''')
         result = R.Stitch('foo', to='html', standalone=False).stitch(code)
-        attrs = result[1][1]['c'][0]['c'][0][2]
+        blocks = result['blocks']
+        attrs = blocks[1]['c'][0]['c'][0][2]
         assert ('width', '10') in attrs
         assert ('height', '10px') in attrs
 
@@ -342,7 +345,8 @@ class TestIntegration:
         ''')
         s = R.Stitch(clean_name, self_contained=False)
         s._kernel_pairs['python'] = clean_python_kernel
-        meta, blocks = s.stitch(code)
+        result = s.stitch(code)
+        blocks = result['blocks']
         expected = '{}_files/unnamed_chunk_0.png'.format(clean_name)
         result = blocks[-1]['c'][0]['c'][2][0]
         assert result == expected
@@ -365,7 +369,7 @@ class TestIntegration:
         ''').format(fmt=fmt)
         s = R.Stitch(clean_name, self_contained=False)
         s._kernel_pairs['python'] = clean_python_kernel
-        meta, blocks = s.stitch(code)
+        s.stitch(code)
         expected = os.path.join(clean_name + '_files',
                                 'unnamed_chunk_0.' + fmt)
         assert os.path.exists(expected)
@@ -385,7 +389,7 @@ class TestIntegration:
         r = R.Stitch('foo', to='html', warning=warning)
         r._kernel_pairs['python'] = clean_python_kernel
         result = r.stitch(code)
-        assert len(result[1]) == length
+        assert len(result['blocks']) == length
 
     @pytest.mark.parametrize('to', ['latex', 'beamer'])
     def test_rich_output(self, to, clean_python_kernel):
@@ -398,7 +402,7 @@ class TestIntegration:
         ''')
         stitch = R.Stitch('foo', to, )
         stitch._kernel_pairs['python'] = clean_python_kernel
-        meta, blocks = stitch.stitch(code)
+        blocks = stitch.stitch(code)['blocks']
         result = blocks[1]['c'][1]
         assert '\\begin{tabular}' in result
 
