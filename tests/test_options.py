@@ -77,6 +77,7 @@ class TestOptionsKernel:
         plt.plot(range(4), range(4))
         ```''')
         s = Stitch('')
-        meta, blocks = s.stitch(code)
+        result = s.stitch(code)
+        blocks = result['blocks']
         result = blocks[-1]['c'][0]['c'][1][0]['c']
         assert result == 'This is a caption'

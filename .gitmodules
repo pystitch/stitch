@@ -1,0 +1,4 @@
+[submodule "pystitch.github.io"]
+	path = pystitch.github.io
+	url = https://github.com/pystitch/pystitch.github.io
+    branch = src

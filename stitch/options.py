@@ -37,7 +37,10 @@ class Str(TraitType):
 
     def validate(self, obj, value):
         if isinstance(value, Mapping):
-            value = ' '.join(x['c'] for x in value['c'] if x['c'])
+            value = value.get('c')
+            if value:
+                strs = filter(None, (x.get('c') for x in value))
+                value = ' '.join(strs)
         if isinstance(value, str) or value is None:
             return value
         self.error(obj, value)
