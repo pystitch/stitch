@@ -39,6 +39,9 @@ If you need a mnemonic, it's "I want knitr, but `not` the one written in `R`."
 Also I wanted to confuse R users.
 And knots are kind of like a buggy version of knits.
 
+``stitch`` requires pandoc>=1.18. This can be installed using your
+system package manager, or `pypandoc <https://pypi.python.org/pypi/pypandoc>`__.
+
 Design
 ======
 
