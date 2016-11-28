@@ -47,7 +47,7 @@ setup(
     },
     include_package_data=True,
     package_data={
-        'stitch': ['static/*'],
+        'stitch': ['static/*', 'templates/*'],
     },
     entry_points={
         'console_scripts': [
