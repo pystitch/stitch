@@ -53,5 +53,8 @@ setup(
         'console_scripts': [
             'stitch=stitch.cli:cli',
         ],
+        'nbconvert.exporters': [
+            'stitch=stitch.exporter:StitchExporter',
+        ]
     },
 )
