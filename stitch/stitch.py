@@ -377,7 +377,7 @@ class Stitch(HasTraits):
         # TODO: interaction of output type and standalone.
         # TODO: this can be simplified, do the file-writing in one step
         def b64_encode(data):
-            return base64.encodebytes(data.encode('ascii')).decode('ascii')
+            return base64.encodebytes(data.encode('utf-8')).decode('ascii')
 
         # TODO: dict of attrs on Stitcher.
         image_keys = {'width', 'height'}
