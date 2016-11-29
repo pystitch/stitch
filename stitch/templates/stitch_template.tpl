@@ -50,7 +50,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {%- endblock output_prompt %}
 
 {% block input %}
-```{python}
+```{{ '{' }}{{ nb.metadata.kernelspec.name }}, echo=False{{ '}' }}
 {{ cell.source}}
 ```
 {% endblock input %}
