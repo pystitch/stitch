@@ -32,7 +32,7 @@ OUTPUT_FORMATS = ['html', 'latex']
 HERE = os.path.dirname(__file__)
 
 KernelPair = namedtuple("KernelPair", "km kc")
-CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}|^```\w+')
+CODE_CHUNK_XPR = re.compile(r'^```{\w+.*}')
 
 
 class _Fig(HasTraits):
@@ -241,7 +241,7 @@ class Stitch(HasTraits):
         new_blocks = []
 
         for i, block in enumerate(blocks):
-            if not is_code_block(block):
+            if not is_code_block(block) and not has_stitch_marker(block):
                 new_blocks.append(block)
                 continue
             # We should only have code blocks now...
@@ -505,8 +505,17 @@ def kernel_factory(kernel_name: str) -> KernelPair:
 # -----------
 
 def is_code_block(block):
-    is_code = block['t'] == CODEBLOCK
+    is_code = block['t'] == CODEBLOCK and has_stitch_marker(block)
     return is_code
+
+
+def has_stitch_marker(block):
+    """Check if __stitch__ is in the code block options"""
+    # this is pre-preprocessing
+    if block['t'] == 'Para':
+        return '__stitch__=True' in block['c'][0]['c'][1]
+    elif block['t'] == 'Code':
+        return '__stitch__=True' in block['c'][0][2]
 
 
 def is_executable(block, lang, attrs):

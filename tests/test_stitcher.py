@@ -284,6 +284,7 @@ class TestFormatters:
         assert result == expected
 
 
+
 @pytest.mark.slow
 class TestIntegration:
 
@@ -515,6 +516,7 @@ class TestStitcher:
         assert s.has_trait('fig.width')
         assert not s.has_trait('fake.width')
         assert not s.has_trait('fig.fake')
+
 
 def test_empty_message():
     # GH 52

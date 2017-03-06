@@ -84,8 +84,9 @@ def preprocess_options(options_line):
     """
     tok = tokenize(options_line)
 
+    tok.insert(-1, Token("KWARG", "__stitch__=True"))
     items = (_transform(kind, text) for kind, text in tok)
-    items = filter(None, items)
+    items = list(filter(None, items))
     items = ' '.join(items)
     result = items.replace('{ ', '{').replace(' }', '}').replace(" {", "{")
     return result
