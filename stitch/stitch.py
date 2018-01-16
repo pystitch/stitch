@@ -77,8 +77,9 @@ class Stitch(HasTraits):
     error : str, default 'continue'
         How to handle exceptions in the executed code-chunks.
     prompt : str, optional
-        String to put before each line of the input code. Defaults
-        to IPython-style counters.
+        String to put before each line of the input code. Defaults to 
+        IPython-style counters. If you specify ``prompt`` option for a code
+        chunk then it would have a prompt even if ``use_prompt`` is ``False``.
     echo : bool, default True
         Whether to include the input code-chunk in the output document.
     eval : bool, default True
@@ -86,6 +87,18 @@ class Stitch(HasTraits):
 
     fig.width : str
     fig.height : str
+
+    use_prompt : bool, default False
+        Whether to use prompt.
+    results : str, default 'default'
+        * 'default': default behaviour
+        * 'pandoc': same as 'default' but some Jupyter output is parsed
+          as markdown: if the output is a stdout message that is
+          not warning/error or if it has 'text/plain' key.
+        * 'hide': evaluate chunk but hide results
+
+    eval_default : bool, default True
+        default 'eval' attribute for every cell
 
 
     Notes
@@ -101,6 +114,8 @@ class Stitch(HasTraits):
     author = opt.Str(None)  # TODO: Multiple authors...
     self_contained = opt.Bool(True)
     standalone = opt.Bool(True)
+    use_prompt = opt.Bool(False)
+    eval_default = opt.Bool(True)
 
     # Document or Cell
     warning = opt.Bool(True)
@@ -109,13 +124,16 @@ class Stitch(HasTraits):
     echo = opt.Bool(True)
     eval = opt.Bool(True)
     fig = _Fig()
+    results = opt.Choice({"pandoc", "hide", "default"}, default_value="default")
 
-    def __init__(self, name, to='html',
-                 standalone=True,
-                 self_contained=True,
-                 warning=True,
-                 error='continue',
-                 prompt=None):
+    def __init__(self, name: str, to: str='html',
+                 standalone: bool=True,
+                 self_contained: bool=True,
+                 warning: bool=True,
+                 error: str='continue',
+                 prompt: str=None,
+                 use_prompt: bool=False,
+                 pandoc_extra_args: list=None):
         """
         Parameters
         ----------
@@ -125,17 +143,25 @@ class Stitch(HasTraits):
             output format
         standalone : bool, default True
             whether to make a standalone document
+        self_contained: bool, default True
         warning : bool, default True
             whether to include warnings (stderr) in the ouput.
         error : ``{"continue", "raise"}``
             how to handle errors in the code being executed.
+        prompt : str, default None
+        use_prompt : bool, default False
+            Whether to use prompt prefixes in code chunks
+        pandoc_extra_args : list of str, default None
+            Pandoc extra args for converting text from markdown
+            to JSON AST.
         """
         super().__init__(to=to, standalone=standalone,
                          self_contained=self_contained, warning=warning,
-                         error=error, prompt=prompt)
+                         error=error, prompt=prompt, use_prompt=use_prompt)
         self._kernel_pairs = {}
         self.name = name
         self.resource_dir = self.name_resource_dir(name)
+        self.pandoc_extra_args = pandoc_extra_args
 
     def __getattr__(self, attr):
         if '.' in attr:
@@ -213,14 +239,33 @@ class Stitch(HasTraits):
             if self.has_trait(attr):
                 self.set_trait(attr, val)
 
-    def stitch(self, source):
+    def stitch(self, source: str) -> dict:
         """
-        Main method for converting a document.
+        Wrapper around ``stitch_ast`` method that preprocesses
+        source code to allow Stitch-style code blocks and
+        then convert to loaded Pandoc JSON AST.
 
         Parameters
         ----------
         source : str
             the actual text to be converted
+
+        Returns
+        -------
+        doc : dict
+        """
+        source = preprocess(source)
+        ast = tokenize(source)
+        return self.stitch_ast(ast)
+
+    def stitch_ast(self, ast: dict) -> dict:
+        """
+        Main method for converting a document.
+
+        Parameters
+        ----------
+        ast : dict
+            Loaded Pandoc JSON AST
 
         Returns
         -------
@@ -231,13 +276,12 @@ class Stitch(HasTraits):
               - meta
               - blocks
         """
-        source = preprocess(source)
-        ast = tokenize(source)
         version = ast['pandoc-api-version']
         meta = ast['meta']
         blocks = ast['blocks']
 
         self.parse_document_options(meta)
+        lm = opt.LangMapper(meta)
         new_blocks = []
 
         for i, block in enumerate(blocks):
@@ -247,12 +291,15 @@ class Stitch(HasTraits):
             # We should only have code blocks now...
             # Execute first, to get prompt numbers
             (lang, name), attrs = parse_kernel_arguments(block)
+            if attrs.get('eval') is None:
+                attrs['eval'] = self.eval_default
+            kernel_name = lm.map_to_kernel(lang)
             if name is None:
                 name = "unnamed_chunk_{}".format(i)
-            if is_executable(block, lang, attrs):
+            if is_executable(block, kernel_name, attrs):
                 # still need to check, since kernel_factory(lang) is executaed
                 # even if the key is present, only want one kernel / lang
-                kernel = self.get_kernel(lang)
+                kernel = self.get_kernel(kernel_name)
                 messages = execute_block(block, kernel)
                 execution_count = extract_execution_count(messages)
             else:
@@ -262,8 +309,8 @@ class Stitch(HasTraits):
             # ... now handle input formatting...
             if self.get_option('echo', attrs):
                 prompt = self.get_option('prompt', attrs)
-                new_blocks.append(wrap_input_code(block, prompt,
-                                                  execution_count))
+                new_blocks.append(wrap_input_code(block, self.use_prompt, prompt,
+                                                  execution_count, lm.map_to_style(lang)))
 
             # ... and output formatting
             if is_stitchable(messages, attrs):
@@ -300,6 +347,8 @@ class Stitch(HasTraits):
 
         The result should be pandoc JSON AST compatible.
         """
+        pandoc = True if (self.get_option('results', attrs) == 'pandoc') else False
+
         # messsage_pairs can come from stdout or the io stream (maybe others?)
         output_messages = [x for x in messages if not is_execute_input(x)]
         display_messages = [x for x in output_messages if not is_stdout(x) and
@@ -312,7 +361,11 @@ class Stitch(HasTraits):
             warning = self.get_option('warning', attrs)
             if is_stdout(message) or (is_stderr(message) and warning):
                 text = message['content']['text']
-                output_blocks.append(plain_output(text))
+                output_blocks += plain_output(
+                    text,
+                    self.pandoc_extra_args,
+                    not (is_stderr(message) and warning) and pandoc
+                )
 
         priority = list(enumerate(NbConvertBase().display_data_priority))
         priority.append((len(priority), 'application/javascript'))
@@ -326,7 +379,7 @@ class Stitch(HasTraits):
                 if error == 'raise':
                     exc = StitchError(message['content']['traceback'])
                     raise exc
-                block = plain_output(
+                blocks = plain_output(
                     '\n'.join(message['content']['traceback'])
                 )
             else:
@@ -343,22 +396,22 @@ class Stitch(HasTraits):
 
                 if key == 'text/plain':
                     # ident, classes, kvs
-                    block = plain_output(data)
+                    blocks = plain_output(data, self.pandoc_extra_args, pandoc)
                 elif key == 'text/latex':
-                    block = RawBlock('latex', data)
+                    blocks = [RawBlock('latex', data)]
                 elif key == 'text/html':
-                    block = RawBlock('html', data)
+                    blocks = [RawBlock('html', data)]
                 elif key == 'application/javascript':
                     script = '<script type=text/javascript>{}</script>'.format(
                         data)
-                    block = RawBlock('html', script)
+                    blocks = [RawBlock('html', script)]
                 elif key.startswith('image') or key == 'application/pdf':
-                    block = self.wrap_image_output(chunk_name, data, key,
-                                                   attrs)
+                    blocks = [self.wrap_image_output(chunk_name, data, key,
+                                                     attrs)]
                 else:
-                    block = tokenize_block(data)
+                    blocks = tokenize_block(data, self.pandoc_extra_args)
 
-            output_blocks.append(block)
+            output_blocks += blocks
         return output_blocks
 
     def wrap_image_output(self, chunk_name, data, key, attrs):
@@ -471,8 +524,10 @@ def convert(source: str, to: str, extra_args=(),
 
     standalone = '--standalone' in extra_args
     self_contained = '--self-contained' in extra_args
+    use_prompt = '--use-prompt' in extra_args
+    extra_args = [item for item in extra_args if item != '--use-prompt']
     stitcher = Stitch(name=output_name, to=to, standalone=standalone,
-                      self_contained=self_contained)
+                      self_contained=self_contained, use_prompt=use_prompt)
     result = stitcher.stitch(source)
     result = json.dumps(result)
     newdoc = pypandoc.convert_text(result, to, format='json',
@@ -569,10 +624,16 @@ def format_ipython_prompt(code, number):
     return formatted
 
 
-def wrap_input_code(block, prompt, execution_count):
+def wrap_input_code(block, use_prompt, prompt, execution_count, code_style=None):
     new = copy.deepcopy(block)
     code = block['c'][1]
-    new['c'][1] = format_input_prompt(prompt, code, execution_count)
+    if use_prompt or prompt is not None:
+        new['c'][1] = format_input_prompt(prompt, code, execution_count)
+    if isinstance(code_style, str) and code_style != '':
+        try:
+            new['c'][0][1][0] = code_style
+        except (KeyError, IndexError):
+            pass
     return new
 
 
@@ -592,8 +653,14 @@ def tokenize(source: str) -> dict:
     return json.loads(pypandoc.convert_text(source, 'json', 'markdown'))
 
 
-def tokenize_block(source):
-    return tokenize(source)['blocks'][0]
+def tokenize_block(source: str, pandoc_extra_args: list=None) -> list:
+    """
+    Convert a Jupyter output to Pandoc's JSON AST.
+    """
+    if pandoc_extra_args is None:
+        pandoc_extra_args = []
+    json_doc = pypandoc.convert_text(source, to='json', format='markdown', extra_args=pandoc_extra_args)
+    return json.loads(json_doc)['blocks']
 
 
 def preprocess(source: str) -> str:
@@ -649,6 +716,7 @@ def parse_kernel_arguments(block):
     - kernel_name
     - chunk_name
 
+    Other positional arguments are ignored by Stitch.
     All other arguments must be like ``keyword=value``.
     """
     options = block['c'][0][1]
@@ -656,11 +724,9 @@ def parse_kernel_arguments(block):
     if len(options) == 0:
         pass
     elif len(options) == 1:
-        kernel_name = options[0].strip('{}').strip()
-    elif len(options) == 2:
-        kernel_name, chunk_name = options
-    else:
-        raise TypeError("Bad options %s" % options)
+        kernel_name = options[0]
+    elif len(options) >= 2:
+        kernel_name, chunk_name = options[0:2]
     kwargs = dict(block['c'][0][2])
     kwargs = {k: v == 'True' if v in ('True', 'False') else v
               for k, v in kwargs.items()}
@@ -680,9 +746,11 @@ def extract_kernel_name(block):
 # Output Processing
 # -----------------
 
-def plain_output(text):
-    block = Div(['', ['output'], []], [CodeBlock(['', [], []], text)])
-    return block
+def plain_output(text: str, pandoc_extra_args: list=None, pandoc: bool=False) -> list:
+    if pandoc:
+        return tokenize_block(text, pandoc_extra_args)
+    else:
+        return [Div(['', ['output'], []], [CodeBlock(['', [], []], text)])]
 
 
 def is_stdout(message):

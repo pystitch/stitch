@@ -196,12 +196,6 @@ class TestKernelArgs:
         result = R.parse_kernel_arguments(code_block)
         assert result == expected
 
-    def test_parse_kernel_arguments_raises(self):
-        block = {'c': [['', ['r', 'foo', 'bar'], []], '3'],
-                 't': 'CodeBlock'}
-        with pytest.raises(TypeError):
-            R.parse_kernel_arguments(block)
-
 
 class TestFormatters:
 
@@ -250,7 +244,7 @@ class TestFormatters:
 
     def test_wrap_input__code(self):
         block = {'t': 'code', 'c': ['a', ['b'], 'c']}
-        result = R.wrap_input_code(block, None, None)
+        result = R.wrap_input_code(block, True, None, None)
         assert block is not result
 
     @pytest.mark.parametrize('messages,expected', [
